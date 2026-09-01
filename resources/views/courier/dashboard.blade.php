@@ -1,0 +1,300 @@
+@extends('layouts.app')
+
+@section('title', 'Portal Tugas Kurir & Driver')
+
+@section('content')
+<div class="max-w-4xl mx-auto space-y-4 md:space-y-6">
+    <!-- Courier Profile Banner (Mobile Optimized) -->
+    <div class="p-5 md:p-6 rounded-2xl md:rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center space-x-3.5 w-full sm:w-auto">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-600/40 border border-indigo-400/30 flex items-center justify-center text-indigo-300 text-2xl font-bold shrink-0 shadow-inner">
+                <i class="fa-solid fa-truck-ramp-box"></i>
+            </div>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center space-x-2">
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        {{ $courier ? strtoupper($courier->status) : 'ON DUTY' }}
+                    </span>
+                    <span class="text-xs font-mono font-bold text-indigo-300">{{ $courier->courier_code ?? 'KUR-001' }}</span>
+                </div>
+                <h2 class="text-lg md:text-xl font-extrabold text-white tracking-tight mt-0.5 truncate">{{ Auth::user()->name }}</h2>
+                <p class="text-[11px] text-slate-400 truncate">
+                    Armada: <span class="font-bold text-slate-200">{{ $courier && $courier->vehicle ? $courier->vehicle->plate_number . ' (' . $courier->vehicle->vehicle_type . ')' : 'Truk Box B 9123 LGS' }}</span>
+                </p>
+            </div>
+        </div>
+        <div class="w-full sm:w-auto bg-white/10 sm:bg-transparent p-3 sm:p-0 rounded-xl flex sm:flex-col justify-between items-center sm:items-end gap-1">
+            <div>
+                <div class="text-[11px] text-slate-300 sm:text-slate-400 uppercase tracking-wider font-semibold">Tugas Saya:</div>
+                <div class="text-xl sm:text-2xl font-black text-emerald-400">{{ count($assignedShipments) }} Paket</div>
+            </div>
+            @php
+                $deliveredCount = $assignedShipments->where('status', 'delivered')->count();
+                $ratePerPackage = $courier->commission_per_delivery ?? 5000;
+                $totalCommission = $deliveredCount * $ratePerPackage;
+            @endphp
+            <div class="text-right">
+                <div class="text-[10px] text-slate-400 uppercase font-bold">Estimasi Komisi ePOD:</div>
+                <div class="text-xs font-black text-amber-300 font-mono">Rp {{ number_format($totalCommission, 0, ',', '.') }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Filter Touch Tabs (Pickup vs Delivery) -->
+    @php
+        $pickupCount = $assignedShipments->filter(fn($s) => in_array($s->status, ['pending', 'picked_up']))->count();
+        $deliveryCount = $assignedShipments->filter(fn($s) => in_array($s->status, ['in_sorting_hub', 'in_transit', 'out_for_delivery']))->count();
+        $doneCount = $assignedShipments->where('status', 'delivered')->count();
+    @endphp
+
+    <div class="grid grid-cols-4 gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200/80 shadow-sm text-center text-xs font-bold">
+        <button onclick="filterStatus('all')" class="filter-btn py-2 rounded-xl bg-indigo-600 text-white transition touch-btn text-[11px]" id="btn-all">
+            Semua ({{ count($assignedShipments) }})
+        </button>
+        <button onclick="filterStatus('pickup')" class="filter-btn py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition touch-btn text-[11px]" id="btn-pickup">
+            📦 Pickup ({{ $pickupCount }})
+        </button>
+        <button onclick="filterStatus('delivery')" class="filter-btn py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition touch-btn text-[11px]" id="btn-delivery">
+            🚚 Antar ({{ $deliveryCount }})
+        </button>
+        <button onclick="filterStatus('delivered')" class="filter-btn py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition touch-btn text-[11px]" id="btn-delivered">
+            ✅ Selesai ({{ $doneCount }})
+        </button>
+    </div>
+
+    <!-- Assigned Shipments List (Mobile Touch Cards) -->
+    <div class="space-y-4">
+        @forelse($assignedShipments as $s)
+            @php
+                $isPickup = in_array($s->status, ['pending', 'picked_up']);
+                $cardType = $s->status == 'delivered' ? 'delivered' : ($isPickup ? 'pickup' : 'delivery');
+            @endphp
+            
+            <div class="shipment-card bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 hover:border-indigo-300 transition" data-type="{{ $cardType }}" data-status="{{ $s->status }}">
+                
+                <!-- Card Header with Task Type Badge -->
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider {{ $isPickup ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' }}">
+                                {{ $isPickup ? '📦 Tugas Penjemputan (Pickup)' : '🚚 Tugas Pengantaran (Delivery)' }}
+                            </span>
+                            @if($s->deliveryOrder)
+                                <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-mono text-[10px] font-bold">
+                                    {{ $s->deliveryOrder->do_number }}
+                                </span>
+                            @endif
+                        </div>
+                        <div class="font-mono font-black text-indigo-600 text-base leading-tight mt-1">{{ $s->tracking_number }}</div>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-extrabold uppercase shrink-0 {{ $s->status == 'delivered' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : ($s->status == 'pending' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-amber-100 text-amber-800 border border-amber-200') }}">
+                        <i class="fa-solid {{ $s->status == 'delivered' ? 'fa-circle-check' : ($s->status == 'pending' ? 'fa-box-open' : 'fa-truck-fast') }} mr-1"></i>
+                        {{ $s->status == 'pending' ? 'Penjemputan' : str_replace('_', ' ', $s->status) }}
+                    </span>
+                </div>
+
+                @if($isPickup)
+                    <!-- PICKUP CARD DETAILS (Pengirim / Pickup Location) -->
+                    <div class="space-y-3">
+                        <div class="bg-purple-50/60 p-4 rounded-xl border border-purple-100 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-purple-700">Lokasi Penjemputan (Pengirim):</span>
+                                <span class="text-[11px] font-bold text-slate-500">{{ $s->service_type }} ({{ $s->weight_kg }} kg)</span>
+                            </div>
+                            
+                            <div class="font-extrabold text-slate-900 text-base leading-snug">{{ $s->sender_name }}</div>
+                            <div class="text-xs text-slate-600 font-medium">{{ $s->sender_address }}, {{ $s->sender_city }}</div>
+                            
+                            <!-- Quick Touch Contact Buttons -->
+                            <div class="grid grid-cols-2 gap-2 pt-1">
+                                <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $s->sender_phone) }}" target="_blank" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center space-x-1.5 touch-btn shadow-sm">
+                                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                                    <span>WA Pengirim</span>
+                                </a>
+                                <a href="tel:{{ preg_replace('/[^0-9]/', '', $s->sender_phone) }}" class="py-2 px-3 rounded-xl bg-purple-100 text-purple-800 hover:bg-purple-200 font-bold text-xs flex items-center justify-center space-x-1.5 touch-btn border border-purple-200">
+                                    <i class="fa-solid fa-phone text-xs"></i>
+                                    <span>Telepon</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/70 text-xs text-slate-600 flex justify-between items-center">
+                            <div><span class="font-bold text-slate-800">Tujuan Akhir:</span> {{ $s->recipient_name }} ({{ $s->recipient_city }})</div>
+                        </div>
+                    </div>
+                @else
+                    <!-- DELIVERY CARD DETAILS (Penerima / Delivery Destination) -->
+                    <div class="space-y-3">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/70 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Penerima Paket:</span>
+                                <span class="text-[11px] font-bold text-slate-500">{{ $s->service_type }} ({{ $s->weight_kg }} kg)</span>
+                            </div>
+                            
+                            <div class="font-extrabold text-slate-900 text-base leading-snug">{{ $s->recipient_name }}</div>
+                            
+                            <!-- Quick Touch Contact Buttons -->
+                            <div class="grid grid-cols-2 gap-2 pt-1">
+                                <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $s->recipient_phone) }}" target="_blank" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center space-x-1.5 touch-btn shadow-sm">
+                                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                                    <span>Chat WA</span>
+                                </a>
+                                <a href="tel:{{ preg_replace('/[^0-9]/', '', $s->recipient_phone) }}" class="py-2 px-3 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold text-xs flex items-center justify-center space-x-1.5 touch-btn border border-indigo-200">
+                                    <i class="fa-solid fa-phone text-xs"></i>
+                                    <span>Telepon</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Destination Address -->
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/70 space-y-1">
+                            <div class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center">
+                                <i class="fa-solid fa-location-dot text-rose-500 mr-1.5"></i> Alamat Pengantaran:
+                            </div>
+                            <div class="font-bold text-slate-900 text-xs">{{ $s->recipient_city }}</div>
+                            <div class="text-slate-600 text-xs leading-relaxed">{{ $s->recipient_address }}</div>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- ACTION BUTTONS FOR COURIER -->
+                <div class="pt-1 space-y-2">
+                    @if($isPickup)
+                        @if($s->status == 'pending')
+                            <form action="{{ route('shipments.update-status', $s->id) }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="status" value="picked_up">
+                                <input type="hidden" name="location" value="{{ $s->sender_city }}">
+                                <input type="hidden" name="description" value="Paket/DO telah berhasil dijemput oleh Kurir {{ Auth::user()->name }} dari lokasi pengirim.">
+                                <button type="submit" class="w-full py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs md:text-sm flex items-center justify-center space-x-2 shadow-md shadow-purple-600/30 transition touch-btn">
+                                    <i class="fa-solid fa-box-check text-base"></i>
+                                    <span>KONFIRMASI PAKET SUDAH DIJEMPUT (PICKED UP)</span>
+                                </button>
+                            </form>
+                        @endif
+
+                        <button onclick="openUpdateStatusModal('{{ $s->id }}', '{{ $s->tracking_number }}', '{{ $s->status }}', '{{ $s->sender_city }}')" 
+                                class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center space-x-1.5 transition">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            <span>Update Status Penjemputan / Posisi Paket</span>
+                        </button>
+                    @else
+                        <a href="{{ route('epod.show', $s->tracking_number) }}" class="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-black text-xs md:text-sm flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/30 transition touch-btn">
+                            <i class="fa-solid fa-camera text-base"></i>
+                            <span>INPUT BUKTI TERIMA ePOD (FOTO & TTD)</span>
+                        </a>
+
+                        <button onclick="openUpdateStatusModal('{{ $s->id }}', '{{ $s->tracking_number }}', '{{ $s->status }}', '{{ $s->recipient_city }}')" 
+                                class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center space-x-1.5 transition">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            <span>Update Status Pengiriman</span>
+                        </button>
+                    @endif
+                </div>
+            </div>
+        @empty
+            <div class="p-10 text-center bg-white rounded-2xl border border-slate-200/80 text-slate-400 space-y-3 shadow-sm">
+                <i class="fa-solid fa-box-open text-4xl text-slate-300"></i>
+                <div class="font-bold text-sm text-slate-600">Belum ada tugas penjemputan atau pengantaran untuk Anda.</div>
+                <p class="text-xs">Hubungi Staf Operasional Hub jika ada tugas baru.</p>
+            </div>
+        @endforelse
+    </div>
+</div>
+
+<!-- Modal Quick Update Status Pengiriman Kurir -->
+<div id="updateCourierStatusModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+                <h3 class="font-extrabold text-slate-900 text-sm">Update Status Pengiriman / Penjemputan</h3>
+                <p class="text-xs text-indigo-600 font-mono font-bold mt-0.5" id="modalTrackingNum"></p>
+            </div>
+            <button onclick="closeUpdateStatusModal()" class="text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form id="modalUpdateStatusForm" method="POST" class="space-y-4">
+            @csrf
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Status Pengiriman Terbaru *</label>
+                <select name="status" id="modalStatusSelect" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-800">
+                    <option value="picked_up">Picked Up (Paket Telah Dijemput Kurir dari Pengirim)</option>
+                    <option value="in_sorting_hub">In Sorting Hub (Paket Masuk Hub Gudang Sortir)</option>
+                    <option value="out_for_delivery">Out For Delivery (Paket Dibawa Kurir untuk Antar)</option>
+                    <option value="delivered">Delivered (Paket Berhasil Terkirim ke Penerima)</option>
+                    <option value="failed">Failed / Retur (Gagal Diantar / Alamat Tidak Ditemukan)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Lokasi Saat Ini *</label>
+                <input type="text" name="location" id="modalLocationInput" required placeholder="Contoh: Hub Bandung / Alamat Pengirim" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Keterangan / Catatan Posisi *</label>
+                <textarea name="description" id="modalDescriptionInput" rows="2" required placeholder="Tuliskan keterangan posisi paket saat ini..." class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800"></textarea>
+            </div>
+
+            <div class="pt-2 flex justify-end space-x-2 border-t border-slate-100">
+                <button type="button" onclick="closeUpdateStatusModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs">Batal</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md">Simpan Update Status</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    function filterStatus(filterType) {
+        document.querySelectorAll('.filter-btn').forEach(b => {
+            b.classList.remove('bg-indigo-600', 'text-white');
+            b.classList.add('text-slate-600', 'hover:bg-slate-100');
+        });
+
+        document.getElementById('btn-' + filterType).classList.remove('text-slate-600', 'hover:bg-slate-100');
+        document.getElementById('btn-' + filterType).classList.add('bg-indigo-600', 'text-white');
+
+        document.querySelectorAll('.shipment-card').forEach(card => {
+            const cardType = card.dataset.type;
+            const cardStatus = card.dataset.status;
+
+            if (filterType === 'all') {
+                card.style.display = 'block';
+            } else if (filterType === 'pickup' && cardType === 'pickup') {
+                card.style.display = 'block';
+            } else if (filterType === 'delivery' && cardType === 'delivery') {
+                card.style.display = 'block';
+            } else if (filterType === 'delivered' && cardStatus === 'delivered') {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function openUpdateStatusModal(shipmentId, trackingNum, currentStatus, currentLoc) {
+        const modal = document.getElementById('updateCourierStatusModal');
+        const form = document.getElementById('modalUpdateStatusForm');
+        const trackingElem = document.getElementById('modalTrackingNum');
+        const statusSelect = document.getElementById('modalStatusSelect');
+        const locationInput = document.getElementById('modalLocationInput');
+        const descInput = document.getElementById('modalDescriptionInput');
+
+        form.action = '/shipments/' + shipmentId + '/status';
+        trackingElem.textContent = 'RESI: ' + trackingNum;
+        statusSelect.value = currentStatus || 'picked_up';
+        locationInput.value = currentLoc || 'Lokasi Kurir';
+        descInput.value = 'Status posisi pengiriman diperbarui oleh Kurir {{ Auth::user()->name }}.';
+
+        modal.classList.remove('hidden');
+    }
+
+    function closeUpdateStatusModal() {
+        document.getElementById('updateCourierStatusModal').classList.add('hidden');
+    }
+</script>
+@endpush
+@endsection
