@@ -12,12 +12,20 @@ class Vehicle extends Model
     protected $fillable = [
         'plate_number',
         'vehicle_type',
+        'ownership_type',
         'capacity_kg',
+        'asset_value',
         'status',
+        'journal_entry_id',
     ];
 
     public function couriers()
     {
         return $this->hasMany(Courier::class);
+    }
+
+    public function journalEntry()
+    {
+        return $this->belongsTo(JournalEntry::class);
     }
 }

@@ -103,12 +103,16 @@
                 <div class="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-3 hover:border-indigo-300 transition">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-2.5">
-                            <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm">
-                                <i class="fa-solid fa-user-gear"></i>
-                            </div>
+                            @if($cr->latest_photo)
+                                <img src="{{ asset('storage/' . $cr->latest_photo) }}" alt="{{ $cr->name }}" class="w-10 h-10 rounded-xl object-cover border-2 border-indigo-500 shadow-sm">
+                            @else
+                                <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm">
+                                    <i class="fa-solid fa-user-gear"></i>
+                                </div>
+                            @endif
                             <div>
                                 <div class="font-extrabold text-slate-900 text-sm leading-tight">{{ $cr->name }}</div>
-                                <div class="text-[11px] font-mono text-indigo-600 font-bold">{{ $cr->courier_code }} • {{ $cr->age ? $cr->age . ' th' : '' }}</div>
+                                <div class="text-[11px] font-mono text-indigo-600 font-bold">{{ $cr->courier_code }} {{ $cr->age ? '• ' . $cr->age . ' th' : '' }}</div>
                             </div>
                         </div>
                         <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border {{ $stBadge }}">

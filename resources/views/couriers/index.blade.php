@@ -7,7 +7,7 @@
     <div class="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
             <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Master Data Kurir / Driver</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Kelola data personalia kurir, gaji pokok, komisi pengiriman, hirarki alamat rumah & armada.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Kelola data personalia kurir, tanggal lahir, NIK KTP, berkas dokumen/foto, gaji pokok & armada.</p>
         </div>
         <button onclick="openNewCourierModal()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition flex items-center">
             <i class="fa-solid fa-plus mr-1.5"></i> Tambah Kurir Baru
@@ -20,7 +20,7 @@
                 <i class="fa-solid fa-id-card-clip text-indigo-600 mr-1.5"></i> Daftar Kurir Operasional
             </h3>
             <form method="GET" action="{{ route('couriers.index') }}" class="flex items-center space-x-2">
-                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="🔍 Cari nama, kode, HP, kota kurir..." class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 w-64 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="🔍 Cari nama, kode, KTP, HP kurir..." class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 w-64 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition">
                     Cari
                 </button>
@@ -35,10 +35,10 @@
             <table class="w-full text-left text-xs">
                 <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-100">
                     <tr>
-                        <th class="p-4">Kode & Nama Kurir</th>
-                        <th class="p-4">No. HP & Kontak Darurat</th>
-                        <th class="p-4">Alamat Rumah (Hirarki Indonesia)</th>
-                        <th class="p-4">Umur & SIM</th>
+                        <th class="p-4">Kurir & Foto</th>
+                        <th class="p-4">No. HP & Kontak</th>
+                        <th class="p-4">Alamat Rumah (Hirarki)</th>
+                        <th class="p-4">Tgl Lahir, KTP & Dokumen</th>
                         <th class="p-4">Armada & Hub</th>
                         <th class="p-4">Gaji Pokok & Komisi</th>
                         <th class="p-4">Status</th>
@@ -49,8 +49,21 @@
                     @forelse($couriers as $cr)
                         <tr class="hover:bg-slate-50/80 transition">
                             <td class="p-4">
-                                <div class="font-bold text-slate-900 text-sm">{{ $cr->name }}</div>
-                                <div class="text-[11px] text-indigo-600 font-mono font-bold">{{ $cr->courier_code }}</div>
+                                <div class="flex items-center space-x-3">
+                                    @if($cr->latest_photo)
+                                        <a href="{{ asset('storage/' . $cr->latest_photo) }}" target="_blank" class="block shrink-0" title="Klik untuk lihat foto terkini kurir">
+                                            <img src="{{ asset('storage/' . $cr->latest_photo) }}" alt="{{ $cr->name }}" class="w-10 h-10 rounded-full object-cover border-2 border-indigo-500 shadow-sm hover:scale-105 transition">
+                                        </a>
+                                    @else
+                                        <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center font-bold text-sm shrink-0">
+                                            <i class="fa-solid fa-user"></i>
+                                        </div>
+                                    @endif
+                                    <div>
+                                        <div class="font-bold text-slate-900 text-sm">{{ $cr->name }}</div>
+                                        <div class="text-[11px] text-indigo-600 font-mono font-bold">{{ $cr->courier_code }}</div>
+                                    </div>
+                                </div>
                             </td>
                             <td class="p-4 text-slate-700">
                                 <div class="font-bold"><i class="fa-solid fa-phone text-slate-400 mr-1"></i> {{ $cr->phone }}</div>
@@ -67,8 +80,45 @@
                                 @endif
                             </td>
                             <td class="p-4 text-slate-700">
-                                <div class="font-bold">{{ $cr->age ? $cr->age . ' thn' : '-' }}</div>
-                                <div class="text-[11px] text-slate-400 font-mono font-semibold">{{ $cr->license_number ?? 'No SIM' }}</div>
+                                <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-cake-candles text-amber-500"></i>
+                                    <span>{{ $cr->birth_date ? \Carbon\Carbon::parse($cr->birth_date)->format('d/m/Y') . ' (' . $cr->age . ' thn)' : '-' }}</span>
+                                </div>
+                                <div class="text-[11px] text-slate-600 font-mono mt-0.5">
+                                    <span class="font-bold text-slate-400">KTP:</span> {{ $cr->ktp_number ?? '-' }}
+                                    <span class="text-slate-300 mx-1">•</span>
+                                    <span class="font-bold text-slate-400">SIM:</span> {{ $cr->license_number ?? '-' }}
+                                </div>
+                                <div class="flex flex-wrap gap-1 mt-1.5">
+                                    @if($cr->ktp_photo)
+                                        <a href="{{ asset('storage/' . $cr->ktp_photo) }}" target="_blank" class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[9px] font-bold hover:bg-blue-100 flex items-center gap-1" title="Lihat Foto KTP">
+                                            <i class="fa-solid fa-id-card"></i> KTP
+                                        </a>
+                                    @endif
+                                    @if($cr->ijazah_photo)
+                                        <a href="{{ asset('storage/' . $cr->ijazah_photo) }}" target="_blank" class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-bold hover:bg-amber-100 flex items-center gap-1" title="Lihat Foto Ijazah">
+                                            <i class="fa-solid fa-graduation-cap"></i> Ijazah
+                                        </a>
+                                    @endif
+                                    @if($cr->sim_photo)
+                                        <a href="{{ asset('storage/' . $cr->sim_photo) }}" target="_blank" class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-bold hover:bg-emerald-100 flex items-center gap-1" title="Lihat Foto SIM">
+                                            <i class="fa-solid fa-address-card"></i> SIM
+                                        </a>
+                                    @endif
+                                    @if($cr->vehicle_photo)
+                                        <a href="{{ asset('storage/' . $cr->vehicle_photo) }}" target="_blank" class="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[9px] font-bold hover:bg-purple-100 flex items-center gap-1" title="Lihat Foto Kendaraan">
+                                            <i class="fa-solid fa-motorcycle"></i> Armada
+                                        </a>
+                                    @endif
+                                    @if($cr->stnk_photo)
+                                        <a href="{{ asset('storage/' . $cr->stnk_photo) }}" target="_blank" class="px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200 text-[9px] font-bold hover:bg-teal-100 flex items-center gap-1" title="Lihat Foto STNK">
+                                            <i class="fa-solid fa-file-lines"></i> STNK
+                                        </a>
+                                    @endif
+                                    @if(!$cr->ktp_photo && !$cr->ijazah_photo && !$cr->sim_photo && !$cr->vehicle_photo && !$cr->stnk_photo)
+                                        <span class="text-[10px] text-slate-400 italic">Belum ada berkas</span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="p-4">
                                 <div class="font-bold text-slate-900">{{ $cr->vehicle ? $cr->vehicle->plate_number : 'Tanpa Armada' }}</div>
@@ -101,7 +151,7 @@
                                 <form action="{{ route('couriers.destroy', $cr->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kurir ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg">
+                                    <button type="submit" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" title="Hapus Kurir">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </form>
@@ -110,40 +160,58 @@
 
                         <!-- Edit Modal per Courier -->
                         <div id="editCourierModal_{{ $cr->id }}" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-                            <div class="bg-white rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl text-left max-h-[90vh] overflow-y-auto">
+                            <div class="bg-white rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl text-left max-h-[92vh] overflow-y-auto">
                                 <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                                    <h3 class="font-extrabold text-slate-900 text-sm">Edit Data Kurir - {{ $cr->name }}</h3>
-                                    <button onclick="document.getElementById('editCourierModal_{{ $cr->id }}').classList.add('hidden')" class="text-slate-400">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                                            <i class="fa-solid fa-user-pen"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="font-extrabold text-slate-900 text-sm">Edit Data Kurir - {{ $cr->name }}</h3>
+                                            <p class="text-[11px] text-slate-500 font-mono">{{ $cr->courier_code }}</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="document.getElementById('editCourierModal_{{ $cr->id }}').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
                                         <i class="fa-solid fa-xmark text-lg"></i>
                                     </button>
                                 </div>
-                                <form action="{{ route('couriers.update', $cr->id) }}" method="POST" class="space-y-4">
+                                <form action="{{ route('couriers.update', $cr->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                                     @csrf
                                     @method('PUT')
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap Kurir *</label>
-                                            <input type="text" name="name" value="{{ $cr->name }}" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                                    <!-- Bagian 1: Identitas Dasar & Kontak -->
+                                    <div class="space-y-2">
+                                        <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-1">
+                                            <i class="fa-solid fa-address-card text-indigo-600 mr-1"></i> Identitas Diri & Kontak Kurir
+                                        </h4>
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap Kurir *</label>
+                                                <input type="text" name="name" value="{{ $cr->name }}" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nomor HP / WhatsApp *</label>
+                                                <input type="text" name="phone" value="{{ $cr->phone }}" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nomor HP / WhatsApp *</label>
-                                            <input type="text" name="phone" value="{{ $cr->phone }}" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+
+                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                            <div>
+                                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nomor KTP (NIK)</label>
+                                                <input type="text" name="ktp_number" value="{{ $cr->ktp_number }}" placeholder="3201xxxxxxxxxxxx" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Tanggal Lahir</label>
+                                                <input type="date" name="birth_date" value="{{ $cr->birth_date }}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Kontak Darurat</label>
+                                                <input type="text" name="emergency_phone" value="{{ $cr->emergency_phone }}" placeholder="081377665544 (Kerabat)" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div>
-                                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Kontak Darurat (Emergency)</label>
-                                            <input type="text" name="emergency_phone" value="{{ $cr->emergency_phone }}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Umur (Tahun)</label>
-                                            <input type="number" name="age" value="{{ $cr->age }}" min="17" max="70" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
-                                        </div>
-                                    </div>
-
-                                    <!-- Hirarki Wilayah Indonesia untuk Edit Alamat Kurir -->
+                                    <!-- Bagian 2: Hirarki Wilayah Indonesia untuk Alamat Kurir -->
                                     <div class="space-y-1.5 pt-1">
                                         <label class="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
                                             <i class="fa-solid fa-map-location-dot text-indigo-600 mr-1"></i> Hirarki Wilayah Alamat Tinggal Kurir
@@ -187,7 +255,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- Financial Info: Gaji Pokok & Komisi -->
+                                    <!-- Bagian 3: Financial Info: Gaji Pokok & Komisi -->
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-indigo-50/60 p-3 rounded-xl border border-indigo-100">
                                         <div>
                                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Gaji Pokok Kurir (Rp) *</label>
@@ -199,7 +267,8 @@
                                         </div>
                                     </div>
 
-                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <!-- Bagian 4: Kendaraan & Penempatan -->
+                                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                                         <div>
                                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nomor SIM</label>
                                             <input type="text" name="license_number" value="{{ $cr->license_number }}" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
@@ -207,7 +276,7 @@
                                         <div>
                                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Pilih Armada</label>
                                             <select name="vehicle_id" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
-                                                <option value="">-- Tanpa Kendaraan --</option>
+                                                <option value="">-- Pilih Armada Kendaraan --</option>
                                                 @foreach($vehicles as $vh)
                                                     <option value="{{ $vh->id }}" {{ $cr->vehicle_id == $vh->id ? 'selected' : '' }}>{{ $vh->plate_number }} ({{ $vh->vehicle_type }})</option>
                                                 @endforeach
@@ -222,15 +291,90 @@
                                                 @endforeach
                                             </select>
                                         </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Status Operational *</label>
+                                            <select name="status" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                                                <option value="available" {{ $cr->status == 'available' ? 'selected' : '' }}>Available</option>
+                                                <option value="on_duty" {{ $cr->status == 'on_duty' ? 'selected' : '' }}>On Duty</option>
+                                                <option value="off" {{ $cr->status == 'off' ? 'selected' : '' }}>Off</option>
+                                            </select>
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Status Operational *</label>
-                                        <select name="status" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
-                                            <option value="available" {{ $cr->status == 'available' ? 'selected' : '' }}>Available</option>
-                                            <option value="on_duty" {{ $cr->status == 'on_duty' ? 'selected' : '' }}>On Duty</option>
-                                            <option value="off" {{ $cr->status == 'off' ? 'selected' : '' }}>Off</option>
-                                        </select>
+                                    <!-- Bagian 5: Upload Berkas & Foto Dokumen Kurir -->
+                                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                                        <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                                            <span><i class="fa-solid fa-file-arrow-up text-indigo-600 mr-1"></i> Upload Foto & Berkas Dokumen Kurir</span>
+                                            <span class="text-[10px] text-slate-400 font-normal lowercase">(format jpg/png, max 5MB per file)</span>
+                                        </h4>
+
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                            <!-- Foto Terkini Kurir -->
+                                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                                                <label class="block text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                                                    <span><i class="fa-solid fa-camera text-indigo-500 mr-1"></i> Foto Terkini Kurir</span>
+                                                    @if($cr->latest_photo)
+                                                        <a href="{{ asset('storage/' . $cr->latest_photo) }}" target="_blank" class="text-[10px] text-indigo-600 font-bold hover:underline">Lihat Foto</a>
+                                                    @endif
+                                                </label>
+                                                <input type="file" name="latest_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                            </div>
+
+                                            <!-- Foto KTP -->
+                                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                                                <label class="block text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                                                    <span><i class="fa-solid fa-id-card text-blue-500 mr-1"></i> Foto KTP Asli</span>
+                                                    @if($cr->ktp_photo)
+                                                        <a href="{{ asset('storage/' . $cr->ktp_photo) }}" target="_blank" class="text-[10px] text-blue-600 font-bold hover:underline">Lihat KTP</a>
+                                                    @endif
+                                                </label>
+                                                <input type="file" name="ktp_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                            </div>
+
+                                            <!-- Foto Ijazah Terakhir -->
+                                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                                                <label class="block text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                                                    <span><i class="fa-solid fa-graduation-cap text-amber-500 mr-1"></i> Foto Ijazah Terakhir</span>
+                                                    @if($cr->ijazah_photo)
+                                                        <a href="{{ asset('storage/' . $cr->ijazah_photo) }}" target="_blank" class="text-[10px] text-amber-600 font-bold hover:underline">Lihat Ijazah</a>
+                                                    @endif
+                                                </label>
+                                                <input type="file" name="ijazah_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                                            </div>
+
+                                            <!-- Foto Kendaraan -->
+                                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                                                <label class="block text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                                                    <span><i class="fa-solid fa-motorcycle text-purple-500 mr-1"></i> Foto Kendaraan</span>
+                                                    @if($cr->vehicle_photo)
+                                                        <a href="{{ asset('storage/' . $cr->vehicle_photo) }}" target="_blank" class="text-[10px] text-purple-600 font-bold hover:underline">Lihat Kendaraan</a>
+                                                    @endif
+                                                </label>
+                                                <input type="file" name="vehicle_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                                            </div>
+
+                                            <!-- Foto STNK -->
+                                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                                                <label class="block text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                                                    <span><i class="fa-solid fa-file-lines text-teal-500 mr-1"></i> Foto STNK</span>
+                                                    @if($cr->stnk_photo)
+                                                        <a href="{{ asset('storage/' . $cr->stnk_photo) }}" target="_blank" class="text-[10px] text-teal-600 font-bold hover:underline">Lihat STNK</a>
+                                                    @endif
+                                                </label>
+                                                <input type="file" name="stnk_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                                            </div>
+
+                                            <!-- Foto SIM -->
+                                            <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                                                <label class="block text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                                                    <span><i class="fa-solid fa-address-card text-emerald-500 mr-1"></i> Foto SIM</span>
+                                                    @if($cr->sim_photo)
+                                                        <a href="{{ asset('storage/' . $cr->sim_photo) }}" target="_blank" class="text-[10px] text-emerald-600 font-bold hover:underline">Lihat SIM</a>
+                                                    @endif
+                                                </label>
+                                                <input type="file" name="sim_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div class="pt-3 flex justify-end space-x-2 border-t border-slate-100">
@@ -261,38 +405,57 @@
 
 <!-- Modal Create Baru -->
 <div id="newCourierModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 class="font-extrabold text-slate-900 text-sm">Tambah Data Kurir Baru</h3>
-            <button onclick="document.getElementById('newCourierModal').classList.add('hidden')" class="text-slate-400">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-slate-900 text-sm">Tambah Data Kurir Baru</h3>
+                    <p class="text-[11px] text-slate-500">Lengkapi data profil, tanggal lahir, NIK KTP, serta foto berkas dokumen</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('newCourierModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
         </div>
-        <form action="{{ route('couriers.store') }}" method="POST" class="space-y-4">
+        <form action="{{ route('couriers.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap Kurir *</label>
-                    <input type="text" name="name" required placeholder="Contoh: Rahmat Hidayat" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+
+            <!-- Bagian 1: Identitas Dasar & Kontak -->
+            <div class="space-y-2">
+                <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-1">
+                    <i class="fa-solid fa-address-card text-indigo-600 mr-1"></i> Identitas Diri & Kontak Kurir
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nama Lengkap Kurir *</label>
+                        <input type="text" name="name" required placeholder="Contoh: Rahmat Hidayat" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">No. HP / WhatsApp *</label>
+                        <input type="text" name="phone" required placeholder="081299887766" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">No. HP / WhatsApp *</label>
-                    <input type="text" name="phone" required placeholder="081299887766" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nomor KTP (NIK)</label>
+                        <input type="text" name="ktp_number" placeholder="3201xxxxxxxxxxxx" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Tanggal Lahir</label>
+                        <input type="date" name="birth_date" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">No. HP Kontak Darurat</label>
+                        <input type="text" name="emergency_phone" placeholder="081377665544 (Kerabat)" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                    </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">No. HP Kontak Darurat</label>
-                    <input type="text" name="emergency_phone" placeholder="081377665544 (Kerabat)" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Umur (Tahun)</label>
-                    <input type="number" name="age" value="25" min="17" max="70" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
-                </div>
-            </div>
-
-            <!-- Hirarki Wilayah Indonesia untuk Alamat Rumah Kurir Baru -->
+            <!-- Bagian 2: Hirarki Wilayah Indonesia untuk Alamat Rumah Kurir Baru -->
             <div class="space-y-1.5 pt-1">
                 <label class="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
                     <i class="fa-solid fa-map-location-dot text-indigo-600 mr-1"></i> Hirarki Wilayah Alamat Tinggal Kurir
@@ -336,7 +499,7 @@
                 </div>
             </div>
 
-            <!-- Financial Info: Gaji Pokok & Komisi -->
+            <!-- Bagian 3: Financial Info: Gaji Pokok & Komisi -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-indigo-50/60 p-3 rounded-xl border border-indigo-100">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Gaji Pokok Kurir (Rp) *</label>
@@ -348,7 +511,8 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <!-- Bagian 4: Kendaraan & Penempatan -->
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Nomor SIM</label>
                     <input type="text" name="license_number" placeholder="SIM-C-998811" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
@@ -356,7 +520,7 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Pilih Armada</label>
                     <select name="vehicle_id" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
-                        <option value="">-- Tanpa Kendaraan --</option>
+                        <option value="">-- Pilih Armada Kendaraan --</option>
                         @foreach($vehicles as $vh)
                             <option value="{{ $vh->id }}">{{ $vh->plate_number }} ({{ $vh->vehicle_type }})</option>
                         @endforeach
@@ -365,21 +529,80 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Pilih Hub Cabang</label>
                     <select name="branch_hub_id" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                        <option value="">-- Tanpa Hub --</option>
                         @foreach($hubs as $hb)
                             <option value="{{ $hb->id }}">{{ $hb->name }} ({{ $hb->city }})</option>
                         @endforeach
                     </select>
                 </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Status Operational *</label>
+                    <select name="status" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                        <option value="available">Available (Siap Bertugas)</option>
+                        <option value="on_duty">On Duty (Sedang Bertugas)</option>
+                        <option value="off">Off (Libur/Cuti)</option>
+                    </select>
+                </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Status Operational *</label>
-                <select name="status" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
-                    <option value="available">Available (Siap Bertugas)</option>
-                    <option value="on_duty">On Duty (Sedang Bertugas)</option>
-                    <option value="off">Off (Libur/Cuti)</option>
-                </select>
+            <!-- Bagian 5: Upload Berkas & Foto Dokumen Kurir -->
+            <div class="space-y-2 pt-2 border-t border-slate-100">
+                <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                    <span><i class="fa-solid fa-file-arrow-up text-indigo-600 mr-1"></i> Upload Foto & Berkas Dokumen Kurir</span>
+                    <span class="text-[10px] text-slate-400 font-normal lowercase">(format jpg/png, max 5MB per file)</span>
+                </h4>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <!-- Foto Terkini Kurir -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                        <label class="block text-[11px] font-bold text-slate-700">
+                            <i class="fa-solid fa-camera text-indigo-500 mr-1"></i> Foto Terkini Kurir
+                        </label>
+                        <input type="file" name="latest_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    </div>
+
+                    <!-- Foto KTP -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                        <label class="block text-[11px] font-bold text-slate-700">
+                            <i class="fa-solid fa-id-card text-blue-500 mr-1"></i> Foto KTP Asli
+                        </label>
+                        <input type="file" name="ktp_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
+
+                    <!-- Foto Ijazah Terakhir -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                        <label class="block text-[11px] font-bold text-slate-700">
+                            <i class="fa-solid fa-graduation-cap text-amber-500 mr-1"></i> Foto Ijazah Terakhir
+                        </label>
+                        <input type="file" name="ijazah_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+                    </div>
+
+                    <!-- Foto Kendaraan -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                        <label class="block text-[11px] font-bold text-slate-700">
+                            <i class="fa-solid fa-motorcycle text-purple-500 mr-1"></i> Foto Kendaraan
+                        </label>
+                        <input type="file" name="vehicle_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                    </div>
+
+                    <!-- Foto STNK -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                        <label class="block text-[11px] font-bold text-slate-700">
+                            <i class="fa-solid fa-file-lines text-teal-500 mr-1"></i> Foto STNK
+                        </label>
+                        <input type="file" name="stnk_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                    </div>
+
+                    <!-- Foto SIM -->
+                    <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+                        <label class="block text-[11px] font-bold text-slate-700">
+                            <i class="fa-solid fa-address-card text-emerald-500 mr-1"></i> Foto SIM
+                        </label>
+                        <input type="file" name="sim_photo" accept="image/*" class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                    </div>
+                </div>
             </div>
+
             <div class="pt-3 flex justify-end space-x-2 border-t border-slate-100">
                 <button type="button" onclick="document.getElementById('newCourierModal').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs">Batal</button>
                 <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs">Simpan Data Kurir</button>

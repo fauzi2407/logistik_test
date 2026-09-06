@@ -84,6 +84,11 @@
                     <span>Slip Gaji Saya (Paid)</span>
                 </a>
 
+                <a href="{{ route('courier-cash-advances.index') }}" class="flex items-center space-x-3 px-3.5 py-3 rounded-xl font-bold text-xs transition {{ request()->routeIs('courier-cash-advances.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-hand-holding-dollar text-base"></i>
+                    <span>Pengajuan Kasbon</span>
+                </a>
+
                 <div class="pt-4">
                     <a href="{{ route('tracking.index') }}" target="_blank" class="flex items-center space-x-3 px-3.5 py-3 rounded-xl font-bold text-xs text-indigo-400 bg-indigo-950/50 hover:bg-indigo-900/50 border border-indigo-800/40 transition">
                         <i class="fa-solid fa-magnifying-glass-location text-base"></i>
@@ -131,6 +136,13 @@
 
                 <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mt-4 mb-2">Operasional Logistik</div>
 
+                @if(Auth::user()->hasPermission('pos.index', 'view'))
+                <a href="{{ route('pos.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('pos.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-cash-register text-sm text-emerald-400"></i>
+                    <span>Menu Kasir / POS Resi</span>
+                </a>
+                @endif
+
                 @if(Auth::user()->hasPermission('customers.index', 'view'))
                 <a href="{{ route('customers.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('customers.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fa-solid fa-building-user text-sm"></i>
@@ -170,6 +182,13 @@
                 <a href="{{ route('courier-payrolls.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('courier-payrolls.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fa-solid fa-money-bill-wave text-sm"></i>
                     <span>Penggajian & Komisi Kurir</span>
+                </a>
+                @endif
+
+                @if(Auth::user()->hasPermission('courier-cash-advances.index', 'view'))
+                <a href="{{ route('courier-cash-advances.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('courier-cash-advances.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
+                    <span>Kasbon Kurir</span>
                 </a>
                 @endif
 

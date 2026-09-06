@@ -23,10 +23,57 @@ class CheckMenuPermission
         $routeName = $request->route()->getName();
 
         if ($routeName) {
+            // Whitelist operational routes for Couriers / Drivers
+            if ($user->role === 'courier') {
+                $courierAllowedRoutes = [
+                    'dashboard',
+                    'shipments.complete-task',
+                    'shipments.update-status',
+                    'courier-assignments.complete',
+                    'courier-assignments.manifest',
+                    'courier-assignments.show',
+                    'courier-payrolls.index',
+                    'courier-payrolls.show',
+                    'courier-payrolls.print-slip',
+                    'courier-cash-advances.index',
+                    'courier-cash-advances.store',
+                    'courier-cash-advances.destroy',
+                    'courier-cash-advances.print',
+                ];
+
+                if (in_array($routeName, $courierAllowedRoutes)) {
+                    return $next($request);
+                }
+            }
+
+            // Whitelist operational routes for Customers
+            if ($user->role === 'customer') {
+                $customerAllowedRoutes = [
+                    'dashboard',
+                    'delivery-orders.create',
+                    'delivery-orders.store',
+                    'delivery-orders.template-csv',
+                    'delivery-orders.import-csv',
+                    'delivery-orders.print',
+                    'delivery-orders.show',
+                    'invoices.show',
+                    'invoices.print',
+                    'invoices.payment',
+                    'shipments.create',
+                    'shipments.store',
+                    'shipments.show',
+                    'shipments.print-label',
+                ];
+
+                if (in_array($routeName, $customerAllowedRoutes)) {
+                    return $next($request);
+                }
+            }
+
             $action = 'view';
             if (str_contains($routeName, '.create') || str_contains($routeName, '.store')) {
                 $action = 'create';
-            } elseif (str_contains($routeName, '.edit') || str_contains($routeName, '.update')) {
+            } elseif (str_contains($routeName, '.edit') || str_contains($routeName, '.update') || str_contains($routeName, '.complete')) {
                 $action = 'edit';
             } elseif (str_contains($routeName, '.destroy')) {
                 $action = 'delete';

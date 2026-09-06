@@ -23,12 +23,24 @@ class Courier extends Model
         'subdistrict',
         'postal_code',
         'emergency_phone',
-        'age',
+        'birth_date',
+        'ktp_number',
+        'ktp_photo',
+        'ijazah_photo',
+        'latest_photo',
+        'vehicle_photo',
+        'stnk_photo',
+        'sim_photo',
         'basic_salary',
         'commission_per_delivery',
         'license_number',
         'status',
     ];
+
+    public function getAgeAttribute()
+    {
+        return $this->birth_date ? \Carbon\Carbon::parse($this->birth_date)->age : null;
+    }
 
     public function user()
     {
@@ -53,5 +65,15 @@ class Courier extends Model
     public function assignments()
     {
         return $this->hasMany(CourierAssignment::class);
+    }
+
+    public function cashAdvances()
+    {
+        return $this->hasMany(CourierCashAdvance::class);
+    }
+
+    public function activeCashAdvances()
+    {
+        return $this->hasMany(CourierCashAdvance::class)->where('status', 'approved');
     }
 }

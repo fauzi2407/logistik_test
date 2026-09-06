@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Courier;
+use App\Models\CourierCashAdvance;
 use App\Models\CourierPayroll;
 use App\Models\Shipment;
 use Illuminate\Http\Request;
@@ -86,9 +87,14 @@ class CourierPayrollController extends Controller
                 ->where('period_month', $month)
                 ->first();
 
+            $activeKasbon = CourierCashAdvance::where('courier_id', $courier->id)
+                ->where('status', 'approved')
+                ->whereNull('payroll_id')
+                ->sum('amount');
+
             $basicSalary = (float) ($savedPayroll ? $savedPayroll->basic_salary : ($courier->basic_salary ?? 0));
             $bonus = $savedPayroll ? $savedPayroll->bonus_amount : 0;
-            $deduction = $savedPayroll ? $savedPayroll->deduction_amount : 0;
+            $deduction = $savedPayroll ? $savedPayroll->deduction_amount : $activeKasbon;
             $netSalary = $savedPayroll ? $savedPayroll->net_salary : (($basicSalary + $totalCommission + $bonus) - $deduction);
             $status = $savedPayroll ? $savedPayroll->status : 'draft';
 
@@ -109,6 +115,7 @@ class CourierPayrollController extends Controller
                 'total_commission' => $totalCommission,
                 'bonus' => $bonus,
                 'deduction' => $deduction,
+                'active_kasbon' => $activeKasbon,
                 'net_salary' => $netSalary,
                 'status' => $status,
                 'payroll' => $savedPayroll,
@@ -155,7 +162,14 @@ class CourierPayrollController extends Controller
             ->latest()
             ->get();
 
-        return view('courier_payrolls.show', compact('payroll', 'deliveredShipments'));
+        $approvedCashAdvances = CourierCashAdvance::where('courier_id', $payroll->courier_id)
+            ->where(function ($q) use ($payroll) {
+                $q->where('status', 'approved')->orWhere('payroll_id', $payroll->id);
+            })
+            ->latest()
+            ->get();
+
+        return view('courier_payrolls.show', compact('payroll', 'deliveredShipments', 'approvedCashAdvances'));
     }
 
     public function generate(Request $request)
@@ -216,6 +230,16 @@ class CourierPayrollController extends Controller
                 'notes' => $request->input('notes'),
             ]
         );
+
+        if ($request->input('status') === 'paid') {
+            CourierCashAdvance::where('courier_id', $courier->id)
+                ->where('status', 'approved')
+                ->whereNull('payroll_id')
+                ->update([
+                    'status' => 'settled',
+                    'payroll_id' => $payroll->id,
+                ]);
+        }
 
         return redirect()->route('courier-payrolls.show', $payroll->id)->with('success', "Slip Gaji Komisi Kurir {$courier->name} berhasil diperbarui.");
     }

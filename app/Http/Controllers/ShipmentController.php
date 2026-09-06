@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\BranchHub;
 use App\Models\Courier;
+use App\Models\CourierAssignment;
+use App\Models\CourierAssignmentItem;
 use App\Models\Customer;
 use App\Models\DeliveryOrder;
 use App\Models\Shipment;
@@ -58,7 +60,7 @@ class ShipmentController extends Controller
         $customers = $loggedInCustomer ? Customer::where('id', $loggedInCustomer->id)->get() : Customer::orderBy('name')->get();
         $hubs = BranchHub::orderBy('name')->get();
         $couriers = Courier::where('status', '!=', 'off')->orderBy('name')->get();
-        $vehicles = Vehicle::where('status', 'active')->orderBy('plate_number')->get();
+        $vehicles = Vehicle::where('status', '!=', 'maintenance')->orderBy('plate_number')->get();
 
         return view('shipments.create', compact('customers', 'hubs', 'couriers', 'vehicles', 'deliveryOrder'));
     }
@@ -72,6 +74,14 @@ class ShipmentController extends Controller
             'customer_id' => 'required|exists:customers,id',
             'origin_hub_id' => 'required|exists:branch_hubs,id',
             'destination_hub_id' => 'required|exists:branch_hubs,id',
+            'sender_name' => 'required|string|max:255',
+            'sender_phone' => 'required|string|max:30',
+            'sender_province' => 'nullable|string|max:100',
+            'sender_city' => 'required|string|max:100',
+            'sender_district' => 'nullable|string|max:100',
+            'sender_subdistrict' => 'nullable|string|max:100',
+            'sender_postal_code' => 'nullable|string|max:20',
+            'sender_address' => 'required|string',
             'recipient_name' => 'required|string|max:255',
             'recipient_phone' => 'required|string|max:30',
             'recipient_province' => 'nullable|string|max:100',
@@ -93,7 +103,15 @@ class ShipmentController extends Controller
 
         $customer = Customer::findOrFail($validated['customer_id']);
 
-        $tariff = Tariff::findTariff($customer->city, $validated['recipient_city'], $validated['service_type']);
+        $tariff = Tariff::findTariff(
+            $validated['sender_city'],
+            $validated['recipient_city'],
+            $validated['service_type'],
+            $validated['sender_district'] ?? null,
+            $validated['sender_subdistrict'] ?? null,
+            $validated['recipient_district'] ?? null,
+            $validated['recipient_subdistrict'] ?? null
+        );
 
         $pricePerKg = $tariff ? $tariff->price_per_kg : ($validated['service_type'] == 'Express' ? 20000 : 12000);
         $chargedWeight = max(1, (int) ceil((float) $validated['weight_kg']));
@@ -110,10 +128,14 @@ class ShipmentController extends Controller
             'customer_id' => $customer->id,
             'origin_hub_id' => $validated['origin_hub_id'],
             'destination_hub_id' => $validated['destination_hub_id'],
-            'sender_name' => $customer->company_name ?: $customer->name,
-            'sender_phone' => $customer->phone,
-            'sender_address' => $customer->address,
-            'sender_city' => $customer->city,
+            'sender_name' => $validated['sender_name'],
+            'sender_phone' => $validated['sender_phone'],
+            'sender_province' => $validated['sender_province'] ?? null,
+            'sender_city' => $validated['sender_city'],
+            'sender_district' => $validated['sender_district'] ?? null,
+            'sender_subdistrict' => $validated['sender_subdistrict'] ?? null,
+            'sender_postal_code' => $validated['sender_postal_code'] ?? null,
+            'sender_address' => $validated['sender_address'],
             'recipient_name' => $validated['recipient_name'],
             'recipient_phone' => $validated['recipient_phone'],
             'recipient_province' => $validated['recipient_province'] ?? null,
@@ -124,7 +146,7 @@ class ShipmentController extends Controller
             'recipient_address' => $validated['recipient_address'],
             'service_type' => $validated['service_type'],
             'weight_kg' => $validated['weight_kg'],
-            'dimensions' => $validated['dimensions'],
+            'dimensions' => $validated['dimensions'] ?? null,
             'declared_value' => $validated['declared_value'] ?? 0,
             'shipping_fee' => $shippingFee,
             'insurance_fee' => $insuranceFee,
@@ -172,7 +194,7 @@ class ShipmentController extends Controller
         $customers = $loggedInCustomer ? Customer::where('id', $loggedInCustomer->id)->get() : Customer::orderBy('name')->get();
         $hubs = BranchHub::orderBy('name')->get();
         $couriers = Courier::where('status', '!=', 'off')->orderBy('name')->get();
-        $vehicles = Vehicle::where('status', 'active')->orderBy('plate_number')->get();
+        $vehicles = Vehicle::where('status', '!=', 'maintenance')->orderBy('plate_number')->get();
 
         return view('shipments.edit', compact('shipment', 'customers', 'hubs', 'couriers', 'vehicles'));
     }
@@ -268,7 +290,77 @@ class ShipmentController extends Controller
             'updated_by_user_id' => Auth::id(),
         ]);
 
+        if (in_array($validated['status'], ['delivered', 'in_sorting_hub'])) {
+            CourierAssignment::markShipmentTaskCompleted($shipment->id);
+        }
+
         return redirect()->back()->with('success', 'Status posisi pengiriman resi berhasil diperbarui.');
+    }
+
+    public function completeTask(Request $request, $id)
+    {
+        $shipment = Shipment::with(['courier', 'originHub', 'destinationHub', 'currentHub'])->findOrFail($id);
+        $user = Auth::user();
+        $courierName = $user ? $user->name : ($shipment->courier ? $shipment->courier->name : 'Kurir');
+
+        // Check the latest assignment for this shipment
+        $assignmentItem = CourierAssignmentItem::with('courierAssignment')->where('shipment_id', $shipment->id)->latest()->first();
+        $assignment = $assignmentItem ? $assignmentItem->courierAssignment : null;
+        $assignmentType = $assignment ? $assignment->assignment_type : 'pickup';
+
+        if ($assignmentType === 'pickup') {
+            $destHub = $assignment ? $assignment->destinationHub : ($shipment->originHub ?? ($shipment->courier ? $shipment->courier->branchHub : null));
+            $hubName = $destHub ? $destHub->name : 'Gudang Hub Sortir';
+            $destHubId = $destHub ? $destHub->id : null;
+
+            $shipmentUpdates = [
+                'status' => 'in_sorting_hub',
+            ];
+            if ($destHubId) {
+                $shipmentUpdates['origin_hub_id'] = $destHubId;
+                $shipmentUpdates['current_hub_id'] = $destHubId;
+            }
+            $shipment->update($shipmentUpdates);
+
+            ShipmentTrackingLog::create([
+                'shipment_id' => $shipment->id,
+                'status' => 'in_sorting_hub',
+                'location' => $hubName,
+                'description' => "Penjemputan selesai oleh Kurir {$courierName}. Paket telah disetorkan ke {$hubName} (Status: In-Hub).",
+                'updated_by_user_id' => Auth::id(),
+            ]);
+
+            CourierAssignment::markShipmentTaskCompleted($shipment->id);
+
+            return redirect()->back()->with('success', "Tugas Pickup resi {$shipment->tracking_number} berhasil diselesaikan! Paket telah masuk status In-Hub & Manifes otomatis diperbarui.");
+        } elseif ($assignmentType === 'transfer') {
+            $destHub = $assignment ? $assignment->destinationHub : $shipment->destinationHub;
+            $hubName = $destHub ? $destHub->name : 'Gudang Hub Tujuan';
+            $destHubId = $destHub ? $destHub->id : null;
+
+            $shipmentUpdates = [
+                'status' => 'in_sorting_hub',
+            ];
+            if ($destHubId) {
+                $shipmentUpdates['current_hub_id'] = $destHubId;
+            }
+            $shipment->update($shipmentUpdates);
+
+            ShipmentTrackingLog::create([
+                'shipment_id' => $shipment->id,
+                'status' => 'in_sorting_hub',
+                'location' => $hubName,
+                'description' => "Transfer Antar Hub selesai oleh Kurir {$courierName}. Paket telah tiba di {$hubName} (Status: In-Hub).",
+                'updated_by_user_id' => Auth::id(),
+            ]);
+
+            CourierAssignment::markShipmentTaskCompleted($shipment->id);
+
+            return redirect()->back()->with('success', "Tugas Transfer resi {$shipment->tracking_number} berhasil diselesaikan! Manifes otomatis diperbarui.");
+        } else {
+            // Delivery task -> mark as delivered or redirect to ePOD
+            return redirect()->route('epod.show', $shipment->tracking_number);
+        }
     }
 
     public function printLabel($id)

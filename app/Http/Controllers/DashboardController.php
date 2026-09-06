@@ -18,21 +18,28 @@ class DashboardController extends Controller
 
         // 1. Dedicated Role View for Couriers / Drivers
         if ($user && $user->role === 'courier') {
-            $courier = Courier::where('user_id', $user->id)->first();
+            $courier = Courier::with(['branchHub', 'vehicle'])->where('user_id', $user->id)->first();
             
             $assignedShipments = collect();
             $myAssignments = collect();
 
             if ($courier) {
-                $assignedShipments = Shipment::with(['originHub', 'destinationHub', 'customer', 'deliveryOrder'])
+                $assignedShipments = Shipment::with(['originHub', 'destinationHub', 'customer', 'deliveryOrder', 'currentHub'])
                     ->where('courier_id', $courier->id)
                     ->latest()
                     ->get();
 
-                $myAssignments = CourierAssignment::with(['items.shipment.originHub', 'items.shipment.destinationHub', 'items.shipment.deliveryOrder', 'vehicle'])
-                    ->where('courier_id', $courier->id)
-                    ->latest()
-                    ->get();
+                $myAssignments = CourierAssignment::with([
+                    'items.shipment.originHub',
+                    'items.shipment.destinationHub',
+                    'items.shipment.deliveryOrder',
+                    'vehicle',
+                    'originHub',
+                    'destinationHub'
+                ])
+                ->where('courier_id', $courier->id)
+                ->latest()
+                ->get();
             }
 
             return view('courier.dashboard', compact('courier', 'assignedShipments', 'myAssignments'));

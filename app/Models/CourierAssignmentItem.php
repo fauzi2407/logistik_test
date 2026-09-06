@@ -28,6 +28,11 @@ class CourierAssignmentItem extends Model
         return $this->belongsTo(CourierAssignment::class, 'courier_assignment_id');
     }
 
+    public function courierAssignment()
+    {
+        return $this->belongsTo(CourierAssignment::class, 'courier_assignment_id');
+    }
+
     public function shipment()
     {
         return $this->belongsTo(Shipment::class);

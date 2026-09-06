@@ -30,6 +30,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // ePOD Mobile Portal for Delivery Boy (Accessible via QR Code Scan on AWB)
 Route::get('/epod/{tracking_number}', [EpodController::class, 'show'])->name('epod.show');
 Route::post('/epod/{tracking_number}', [EpodController::class, 'store'])->name('epod.store');
+Route::post('/epod/{tracking_number}/transit', [EpodController::class, 'storeTransit'])->name('epod.store-transit');
 
 // Protected Internal Management Routes
 Route::middleware(['auth'])->group(function () {
@@ -55,19 +56,33 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/delivery-orders/{id}/generate-shipments', [DeliveryOrderController::class, 'generateShipments'])->name('delivery-orders.generate-shipments');
     Route::resource('delivery-orders', DeliveryOrderController::class);
 
+    // Menu Kasir / POS Resi
+    Route::get('/pos', [\App\Http\Controllers\PosController::class, 'index'])->name('pos.index');
+    Route::post('/pos/store-customer', [\App\Http\Controllers\PosController::class, 'storeCustomer'])->name('pos.store-customer');
+    Route::post('/pos/store-shipment', [\App\Http\Controllers\PosController::class, 'storeShipment'])->name('pos.store-shipment');
+    Route::get('/pos/{id}/print-receipt', [\App\Http\Controllers\PosController::class, 'printReceipt'])->name('pos.print-receipt');
+
     // Resi / Shipments (AWB)
     Route::get('/shipments/{id}/print-label', [ShipmentController::class, 'printLabel'])->name('shipments.print-label');
     Route::post('/shipments/{id}/status', [ShipmentController::class, 'updateStatus'])->name('shipments.update-status');
+    Route::post('/shipments/{id}/complete-task', [ShipmentController::class, 'completeTask'])->name('shipments.complete-task');
     Route::resource('shipments', ShipmentController::class);
 
     // Penugasan Kurir & Manifes
     Route::get('/courier-assignments/{id}/manifest', [CourierAssignmentController::class, 'manifest'])->name('courier-assignments.manifest');
+    Route::post('/courier-assignments/{id}/complete', [CourierAssignmentController::class, 'complete'])->name('courier-assignments.complete');
     Route::resource('courier-assignments', CourierAssignmentController::class);
 
     // Penggajian & Komisi Kurir
     Route::get('/courier-payrolls/{id}/print-slip', [\App\Http\Controllers\CourierPayrollController::class, 'printSlip'])->name('courier-payrolls.print-slip');
     Route::post('/courier-payrolls/generate', [\App\Http\Controllers\CourierPayrollController::class, 'generate'])->name('courier-payrolls.generate');
     Route::resource('courier-payrolls', \App\Http\Controllers\CourierPayrollController::class)->only(['index', 'show']);
+
+    // Kasbon Kurir (Cash Advance)
+    Route::get('/courier-cash-advances/{id}/print', [\App\Http\Controllers\CourierCashAdvanceController::class, 'printVoucher'])->name('courier-cash-advances.print');
+    Route::post('/courier-cash-advances/{id}/approve', [\App\Http\Controllers\CourierCashAdvanceController::class, 'approve'])->name('courier-cash-advances.approve');
+    Route::post('/courier-cash-advances/{id}/reject', [\App\Http\Controllers\CourierCashAdvanceController::class, 'reject'])->name('courier-cash-advances.reject');
+    Route::resource('courier-cash-advances', \App\Http\Controllers\CourierCashAdvanceController::class)->except(['create', 'show', 'edit']);
 
     // Pembelian Barang & Master Vendor
     Route::resource('vendors', \App\Http\Controllers\VendorController::class)->except(['create', 'show', 'edit']);

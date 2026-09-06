@@ -41,10 +41,17 @@
         <div class="box">
             <strong>KURIR PETUGAS:</strong> {{ $assignment->courier->name }} ({{ $assignment->courier->courier_code }})<br>
             <strong>NO. TELEPON:</strong> {{ $assignment->courier->phone }}<br>
-            <strong>HUB ASAL:</strong> {{ $assignment->courier->branchHub ? $assignment->courier->branchHub->name : 'Jakarta' }}
+            <strong>HUB KURIR:</strong> {{ $assignment->courier->branchHub ? $assignment->courier->branchHub->name : 'Semua Hub' }}<br>
+            @if($assignment->assignment_type === 'pickup' && $assignment->destinationHub)
+                <strong>HUB TUJUAN SETOR:</strong> <span style="color: #4f46e5; font-weight: bold;">{{ $assignment->destinationHub->name }} ({{ $assignment->destinationHub->city }})</span>
+            @elseif($assignment->assignment_type === 'transfer')
+                <strong>RUTE TRANSFER:</strong> <span style="color: #0891b2; font-weight: bold;">{{ $assignment->originHub ? $assignment->originHub->name : 'Hub Asal' }} &rarr; {{ $assignment->destinationHub ? $assignment->destinationHub->name : 'Hub Tujuan' }}</span>
+            @elseif($assignment->assignment_type === 'delivery' && $assignment->originHub)
+                <strong>HUB PENGANTARAN:</strong> <span style="color: #059669; font-weight: bold;">{{ $assignment->originHub->name }} ({{ $assignment->originHub->city }})</span>
+            @endif
         </div>
         <div class="box">
-            <strong>ARMADA:</strong> {{ $assignment->vehicle ? $assignment->vehicle->plate_number . ' (' . $assignment->vehicle->vehicle_type . ')' : 'Standar' }}<br>
+            <strong>ARMADA:</strong> {{ $assignment->vehicle ? $assignment->vehicle->plate_number . ' (' . $assignment->vehicle->vehicle_type . ')' : 'Kendaraan Pribadi' }}<br>
             <strong>TIPE PENUGASAN:</strong> {{ strtoupper($assignment->assignment_type) }}<br>
             <strong>TOTAL DOKUMEN/RESI:</strong> {{ count($assignment->items) }} Paket
         </div>
@@ -58,7 +65,7 @@
                 <th style="width: 30%;">Penerima & Alamat</th>
                 <th style="width: 15%;">No. Telepon</th>
                 <th style="width: 10%;">Berat</th>
-                <th style="width: 20%;">Tanda Tangan Penerima</th>
+                <th style="width: 20%;">Tanda Tangan / Status</th>
             </tr>
         </thead>
         <tbody>

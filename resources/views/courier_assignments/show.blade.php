@@ -10,7 +10,15 @@
             <h2 class="text-2xl font-black text-slate-900 tracking-tight font-mono">{{ $assignment->assignment_number }}</h2>
             <div class="text-xs text-slate-500 mt-1">Tanggal Tugas: <span class="font-bold text-indigo-600">{{ $assignment->assignment_date->format('d M Y') }}</span></div>
         </div>
-        <div class="flex items-center space-x-2">
+        <div class="flex flex-wrap items-center gap-2">
+            @if($assignment->status === 'in_progress')
+                <form action="{{ route('courier-assignments.complete', $assignment->id) }}" method="POST" onsubmit="return confirm('Selesaikan penugasan {{ $assignment->assignment_number }} dan perbarui status seluruh resi menjadi In-Hub (Sorting Hub)?')">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 transition flex items-center">
+                        <i class="fa-solid fa-circle-check mr-1.5"></i> Selesaikan Manifes (Paket Masuk Hub)
+                    </button>
+                </form>
+            @endif
             <a href="{{ route('courier-assignments.edit', $assignment->id) }}" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition">
                 <i class="fa-solid fa-pen-to-square mr-1"></i> Edit Manifes
             </a>
@@ -23,24 +31,49 @@
         </div>
     </div>
 
-    <!-- Courier Info Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+    <!-- Courier & Route Info Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
             <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kurir Petugas</div>
             <div class="text-base font-bold text-slate-900">{{ $assignment->courier->name }}</div>
             <div class="text-xs text-slate-500 font-mono">{{ $assignment->courier->courier_code }} • HP: {{ $assignment->courier->phone }}</div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
             <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Armada Kendaraan</div>
-            <div class="text-base font-bold text-slate-900">{{ $assignment->vehicle ? $assignment->vehicle->plate_number : 'Bawaan Kurir' }}</div>
+            <div class="text-base font-bold text-slate-900">{{ $assignment->vehicle ? $assignment->vehicle->plate_number : 'Kendaraan Pribadi' }}</div>
             <div class="text-xs text-slate-500">{{ $assignment->vehicle ? $assignment->vehicle->vehicle_type : '-' }}</div>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
             <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tipe Tugas & Status</div>
             <div class="text-base font-bold text-indigo-600 uppercase">{{ $assignment->assignment_type }}</div>
             <div class="text-xs font-bold text-emerald-600 uppercase">{{ $assignment->status }}</div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Rute / Hub Operasional</div>
+            @if($assignment->assignment_type === 'pickup')
+                <div class="text-sm font-bold text-indigo-700">
+                    <i class="fa-solid fa-warehouse mr-1 text-indigo-500"></i> {{ $assignment->destinationHub ? $assignment->destinationHub->name : 'Hub Kurir' }}
+                </div>
+                <div class="text-[11px] text-slate-400">Gudang Tujuan Setor</div>
+            @elseif($assignment->assignment_type === 'transfer')
+                <div class="text-xs font-bold text-cyan-800">
+                    <i class="fa-solid fa-route mr-1 text-cyan-600"></i> {{ $assignment->originHub ? $assignment->originHub->name : 'Hub Asal' }} &rarr; {{ $assignment->destinationHub ? $assignment->destinationHub->name : 'Hub Tujuan' }}
+                </div>
+                <div class="text-[11px] text-slate-400">Rute Transfer Linehaul</div>
+            @else
+                <div class="text-sm font-bold text-slate-800">
+                    <i class="fa-solid fa-house-chimney mr-1 text-slate-400"></i> Alamat Penerima
+                </div>
+                @if($assignment->originHub)
+                    <div class="text-[11px] text-emerald-600 font-bold">
+                        <i class="fa-solid fa-warehouse mr-1 text-emerald-500"></i> Hub: {{ $assignment->originHub->name }}
+                    </div>
+                @endif
+                <div class="text-[11px] text-slate-400">Pengantaran Last-Mile</div>
+            @endif
         </div>
     </div>
 
@@ -48,7 +81,7 @@
     <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-slate-100">
             <h3 class="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
-                <i class="fa-solid fa-boxes-stacked text-indigo-600 mr-2"></i> Daftar Resi Dalam Manifes Penugasan Ini
+                <i class="fa-solid fa-boxes-stacked text-indigo-600 mr-2"></i> Daftar Resi Dalam Manifes Penugasan Ini ({{ count($assignment->items) }} Resi)
             </h3>
         </div>
         <div class="overflow-x-auto">

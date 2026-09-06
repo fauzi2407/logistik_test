@@ -2,20 +2,63 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BranchHub;
 use App\Models\Shipment;
 use App\Models\ShipmentTrackingLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class EpodController extends Controller
 {
     public function show($tracking_number)
     {
-        $shipment = Shipment::with(['originHub', 'destinationHub', 'courier', 'vehicle'])
+        $shipment = Shipment::with(['originHub', 'destinationHub', 'courier', 'vehicle', 'trackingLogs.updatedBy'])
             ->where('tracking_number', $tracking_number)
             ->firstOrFail();
 
-        return view('epod.show', compact('shipment'));
+        $hubs = BranchHub::orderBy('name')->get();
+
+        return view('epod.show', compact('shipment', 'hubs'));
+    }
+
+    public function storeTransit(Request $request, $tracking_number)
+    {
+        $shipment = Shipment::where('tracking_number', $tracking_number)->firstOrFail();
+
+        $validated = $request->validate([
+            'status' => 'required|string|in:in_sorting_hub,in_transit,out_for_delivery',
+            'location' => 'required|string|max:255',
+            'notes' => 'nullable|string',
+        ]);
+
+        $statusLabels = [
+            'in_sorting_hub' => 'Tiba di Hub Sorting / Gudang Transit',
+            'in_transit' => 'Dalam Perjalanan Antar Hub (Linehaul)',
+            'out_for_delivery' => 'Dibawa Kurir (Out for Delivery)',
+        ];
+
+        $statusLabel = $statusLabels[$validated['status']] ?? $validated['status'];
+        $notesText = $validated['notes'] ? " ({$validated['notes']})" : "";
+
+        $shipment->update([
+            'status' => $validated['status'],
+        ]);
+
+        ShipmentTrackingLog::create([
+            'shipment_id' => $shipment->id,
+            'status' => $validated['status'],
+            'location' => $validated['location'],
+            'description' => "Status Transit Diperbarui via Scan QR AWB: {$statusLabel}{$notesText}.",
+            'updated_by_user_id' => Auth::id(),
+        ]);
+
+        $message = "Status transit resi {$shipment->tracking_number} berhasil diperbarui menjadi: {$statusLabel}!";
+        if ($validated['status'] === 'out_for_delivery') {
+            $message .= " Paket kini siap diserahterimakan dan form ePOD telah diaktifkan.";
+        }
+
+        return redirect()->route('epod.show', $tracking_number)->with('success', $message);
     }
 
     public function store(Request $request, $tracking_number)
@@ -61,7 +104,10 @@ class EpodController extends Controller
             'status' => 'delivered',
             'location' => $validated['pod_location_name'] ?: $shipment->recipient_city,
             'description' => "Paket telah diterima oleh {$validated['pod_receiver_name']} ({$validated['pod_receiver_relation']}). Bukti ePOD (Foto, Tanda Tangan & Lokasi GPS Real-Time{$gpsInfo}) berhasil diverifikasi.",
+            'updated_by_user_id' => Auth::id(),
         ]);
+
+        \App\Models\CourierAssignment::markShipmentTaskCompleted($shipment->id);
 
         return redirect()->route('epod.show', $tracking_number)->with('success', 'ePOD Berhasil Disimpan! Paket telah resmi terkirim (DELIVERED).');
     }

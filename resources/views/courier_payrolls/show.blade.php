@@ -89,7 +89,23 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Potongan Gaji (Rp)</label>
-                    <input type="number" name="deduction_amount" value="{{ old('deduction_amount', $payroll->deduction_amount) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-rose-600">
+                    <input type="number" id="deduction_input" name="deduction_amount" value="{{ old('deduction_amount', $payroll->deduction_amount) }}" min="0" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-rose-600">
+                    @if(isset($approvedCashAdvances) && $approvedCashAdvances->isNotEmpty())
+                        @php
+                            $kasbonTotal = $approvedCashAdvances->sum('amount');
+                        @endphp
+                        <div class="mt-1.5 p-2 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold"><i class="fa-solid fa-hand-holding-dollar mr-1 text-amber-600"></i> Kasbon Terkait: Rp {{ number_format($kasbonTotal, 0, ',', '.') }}</span>
+                                <button type="button" onclick="document.getElementById('deduction_input').value='{{ $kasbonTotal }}'" class="underline font-bold text-indigo-600 hover:text-indigo-800 text-[10px]">Terapkan ke Potongan</button>
+                            </div>
+                            <div class="mt-1 text-[10px] text-slate-500 space-y-0.5">
+                                @foreach($approvedCashAdvances as $adv)
+                                    <div>• {{ $adv->advance_number }}: Rp {{ number_format($adv->amount, 0, ',', '.') }} ({{ $adv->status_label }})</div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 
