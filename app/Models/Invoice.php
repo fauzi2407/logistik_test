@@ -61,4 +61,20 @@ class Invoice extends Model
                 return '<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-clock mr-1"></i> BELUM DIBAYAR</span>';
         }
     }
+
+    protected static function booted()
+    {
+        static::saved(function ($invoice) {
+            if ($invoice->delivery_order_id) {
+                if ($invoice->status === 'paid') {
+                    $invoice->deliveryOrder()->update(['status' => 'completed']);
+                } elseif (in_array($invoice->status, ['unpaid', 'cancelled'])) {
+                    $do = $invoice->deliveryOrder;
+                    if ($do && in_array($do->status, ['completed', 'komplit'])) {
+                        $do->update(['status' => 'approved']);
+                    }
+                }
+            }
+        });
+    }
 }

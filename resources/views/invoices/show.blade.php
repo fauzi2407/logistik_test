@@ -82,7 +82,11 @@
                 <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Detail Referensi Invoice:</div>
                 <div><span class="text-slate-400">No. Invoice:</span> <span class="font-mono font-bold text-indigo-600 text-sm">{{ $invoice->invoice_number }}</span></div>
                 @if($invoice->deliveryOrder)
-                    <div><span class="text-slate-400">Ref Surat Jalan DO:</span> <a href="{{ route('delivery-orders.show', $invoice->deliveryOrder->id) }}" class="font-mono font-bold text-slate-800 hover:underline">{{ $invoice->deliveryOrder->do_number }}</a></div>
+                    <div class="flex items-center sm:justify-end gap-1.5 flex-wrap">
+                        <span class="text-slate-400">Ref Surat Jalan DO:</span>
+                        <a href="{{ route('delivery-orders.show', $invoice->deliveryOrder->id) }}" class="font-mono font-bold text-slate-800 hover:underline">{{ $invoice->deliveryOrder->do_number }}</a>
+                        {!! $invoice->deliveryOrder->status_badge !!}
+                    </div>
                 @endif
                 <div><span class="text-slate-400">Tgl Penerbitan:</span> <span class="font-semibold text-slate-800">{{ $invoice->invoice_date->format('d M Y') }}</span></div>
                 <div><span class="text-slate-400">Tgl Jatuh Tempo:</span> <span class="font-bold text-rose-600">{{ $invoice->due_date->format('d M Y') }}</span></div>

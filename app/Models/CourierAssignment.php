@@ -64,9 +64,53 @@ class CourierAssignment extends Model
 
             $assignment = $item->courierAssignment;
             if ($assignment && $assignment->status !== 'completed' && $assignment->status !== 'cancelled') {
-                // Check if all items in this assignment are completed
+                // Check if there are still pending items in this assignment
                 $hasPendingItems = CourierAssignmentItem::where('courier_assignment_id', $assignment->id)
-                    ->where('status', '!=', 'completed')
+                    ->where('status', 'pending')
+                    ->exists();
+
+                if (!$hasPendingItems) {
+                    $assignment->update(['status' => 'completed']);
+
+                    // Release courier & vehicle if no other in_progress assignments
+                    if ($assignment->courier_id) {
+                        $hasOtherCourierAssignments = CourierAssignment::where('courier_id', $assignment->courier_id)
+                            ->where('id', '!=', $assignment->id)
+                            ->where('status', 'in_progress')
+                            ->exists();
+                        if (!$hasOtherCourierAssignments) {
+                            Courier::where('id', $assignment->courier_id)->update(['status' => 'available']);
+                        }
+                    }
+
+                    if ($assignment->vehicle_id) {
+                        $hasOtherVehicleAssignments = CourierAssignment::where('vehicle_id', $assignment->vehicle_id)
+                            ->where('id', '!=', $assignment->id)
+                            ->where('status', 'in_progress')
+                            ->exists();
+                        if (!$hasOtherVehicleAssignments) {
+                            Vehicle::where('id', $assignment->vehicle_id)->update(['status' => 'active']);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static function markShipmentTaskFailed($shipmentId, $notes = null)
+    {
+        $items = CourierAssignmentItem::where('shipment_id', $shipmentId)->where('status', 'pending')->get();
+        foreach ($items as $item) {
+            $item->update([
+                'status' => 'failed',
+                'completed_at' => now(),
+            ]);
+
+            $assignment = $item->courierAssignment;
+            if ($assignment && $assignment->status !== 'completed' && $assignment->status !== 'cancelled') {
+                // Check if there are still pending items in this assignment
+                $hasPendingItems = CourierAssignmentItem::where('courier_assignment_id', $assignment->id)
+                    ->where('status', 'pending')
                     ->exists();
 
                 if (!$hasPendingItems) {

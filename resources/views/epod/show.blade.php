@@ -89,8 +89,8 @@
             </div>
         </div>
 
-        @if(!in_array($shipment->status, ['out_for_delivery', 'delivered']))
-            <!-- MODE 1: FORM UPDATE STATUS TRANSIT (Jika Status Belum Out for Delivery / Delivered) -->
+        @if(!in_array($shipment->status, ['out_for_delivery', 'delivered', 'failed']))
+            <!-- MODE 1: FORM UPDATE STATUS TRANSIT (Jika Status Belum Out for Delivery / Delivered / Failed) -->
             <div class="bg-slate-800/90 p-5 rounded-2xl border border-slate-700/80 space-y-4">
                 <div class="flex items-center space-x-2 border-b border-slate-700 pb-3">
                     <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm">
@@ -130,27 +130,8 @@
                     </button>
                 </form>
             </div>
-
-            <!-- History Logs Section -->
-            <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/60 space-y-3">
-                <h4 class="text-xs font-extrabold uppercase text-slate-400 tracking-wider flex items-center">
-                    <i class="fa-solid fa-clock-rotate-left mr-2 text-indigo-400"></i> Riwayat Pergerakan Resi
-                </h4>
-                <div class="space-y-2.5 max-h-48 overflow-y-auto text-xs pr-1">
-                    @foreach($shipment->trackingLogs as $log)
-                        <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                            <div class="flex justify-between text-[10px]">
-                                <span class="font-bold text-indigo-300">{{ $log->location }}</span>
-                                <span class="text-slate-500">{{ $log->created_at->format('d/m/Y H:i') }}</span>
-                            </div>
-                            <p class="text-slate-300 text-[11px] leading-snug">{{ $log->description }}</p>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-
         @else
-            <!-- MODE 2: FORM EPOD ELECTRONIC PROOF OF DELIVERY (Jika Status Out for Delivery / Delivered) -->
+            <!-- MODE 2: FORM EPOD & LAPOR GAGAL (Jika Status Out for Delivery / Failed / Delivered) -->
             @if($shipment->status === 'delivered')
                 <div class="p-4 rounded-2xl bg-emerald-950/60 border border-emerald-500/50 text-emerald-200 text-xs space-y-3">
                     <div class="flex items-center space-x-2 font-bold text-sm text-emerald-400">
@@ -185,93 +166,198 @@
                 </div>
             @endif
 
-            <!-- ePOD Submission Form -->
-            <form action="{{ route('epod.store', $shipment->tracking_number) }}" method="POST" enctype="multipart/form-data" onsubmit="saveSignature()" class="space-y-5 bg-slate-800/80 p-5 rounded-2xl border border-slate-700">
-                @csrf
-
-                <div class="flex items-center space-x-2 border-b border-slate-700 pb-3">
-                    <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">
-                        <i class="fa-solid fa-signature"></i>
+            @if($shipment->status === 'failed')
+                <div class="p-4 rounded-2xl bg-rose-950/60 border border-rose-500/50 text-rose-200 text-xs space-y-3">
+                    <div class="flex items-center justify-between font-bold text-sm text-rose-400">
+                        <span class="flex items-center space-x-2">
+                            <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                            <span>PENGIRIMAN GAGAL (HOLD / KENDALA)</span>
+                        </span>
+                        <span class="text-[10px] bg-rose-900/80 px-2 py-0.5 rounded uppercase font-bold text-rose-300 border border-rose-700">
+                            HOLD
+                        </span>
                     </div>
-                    <div>
-                        <h3 class="text-sm font-extrabold text-white">Form ePOD Serah Terima Paket</h3>
-                        <p class="text-[11px] text-slate-400">Isi bukti tanda tangan & foto saat paket diserahkan.</p>
+                    <div class="text-slate-300 text-[11px] leading-relaxed">
+                        <strong class="text-rose-300">Catatan Kendala:</strong> {{ $shipment->pod_notes ?: 'Alamat tidak ditemukan atau salah penerima.' }}
                     </div>
-                </div>
-
-                <input type="hidden" name="pod_signature" id="podSignatureInput" value="{{ $shipment->pod_signature }}">
-                <input type="hidden" name="pod_latitude" id="podLatitudeInput" value="{{ $shipment->pod_latitude }}">
-                <input type="hidden" name="pod_longitude" id="podLongitudeInput" value="{{ $shipment->pod_longitude }}">
-                <input type="hidden" name="pod_location_name" id="podLocationNameInput" value="{{ $shipment->pod_location_name }}">
-
-                <!-- Real-time GPS Location Status Card -->
-                <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-700 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-2">
-                            <span class="relative flex h-3 w-3">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                            </span>
-                            <span class="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">Lokasi Real-Time GPS</span>
+                    @if($shipment->pod_photo)
+                        <div class="pt-1">
+                            <span class="text-slate-400 text-[10px] block mb-1">Foto Bukti Kendala di Lapangan:</span>
+                            <img src="{{ asset('storage/' . $shipment->pod_photo) }}" alt="Bukti Kendala" class="w-full h-40 object-cover rounded-xl border border-rose-500/30">
                         </div>
-                        <button type="button" onclick="getRealtimeGPSLocation()" class="text-[10px] font-bold text-indigo-400 hover:text-indigo-300">
-                            <i class="fa-solid fa-rotate mr-1"></i> Refresh GPS
+                    @endif
+                    <div class="pt-2 border-t border-rose-800/60 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>Paket ditahan sementara. Anda dapat mencoba kirim ulang atau retur ke Hub.</span>
+                    </div>
+
+                    <!-- Tombol Retur / Setor ke Hub Transit -->
+                    <form action="{{ route('epod.store-transit', $shipment->tracking_number) }}" method="POST" onsubmit="return confirm('Kembalikan paket ke Gudang Hub Sortir?')">
+                        @csrf
+                        <input type="hidden" name="status" value="in_sorting_hub">
+                        <input type="hidden" name="location" value="{{ $shipment->destinationHub ? $shipment->destinationHub->name : $shipment->sender_city }}">
+                        <input type="hidden" name="notes" value="Paket gagal antar disetorkan kembali ke Hub Sortir untuk koordinasi ulang.">
+                        <button type="submit" class="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-950 border border-slate-700 text-slate-300 font-bold text-xs flex items-center justify-center space-x-1.5 transition">
+                            <i class="fa-solid fa-warehouse text-amber-400"></i>
+                            <span>Setorkan Paket Kembali ke Hub Sortir</span>
                         </button>
+                    </form>
+                </div>
+            @endif
+
+            @if($shipment->status !== 'delivered')
+                <!-- ePOD Submission Form (BERHASIL TERKIRIM) -->
+                <form action="{{ route('epod.store', $shipment->tracking_number) }}" method="POST" enctype="multipart/form-data" onsubmit="saveSignature()" class="space-y-5 bg-slate-800/80 p-5 rounded-2xl border border-slate-700">
+                    @csrf
+
+                    <div class="flex items-center space-x-2 border-b border-slate-700 pb-3">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">
+                            <i class="fa-solid fa-signature"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-extrabold text-white">Form ePOD Serah Terima Paket</h3>
+                            <p class="text-[11px] text-slate-400">Isi jika paket berhasil diserahkan ke penerima.</p>
+                        </div>
                     </div>
-                    <div id="gpsStatusText" class="text-xs text-slate-300 font-medium">
-                        <i class="fa-solid fa-spinner fa-spin mr-1"></i> Mengambil koordinat GPS lokasi Anda saat ini...
+
+                    <input type="hidden" name="pod_signature" id="podSignatureInput" value="{{ $shipment->pod_signature }}">
+                    <input type="hidden" name="pod_latitude" id="podLatitudeInput" value="{{ $shipment->pod_latitude }}">
+                    <input type="hidden" name="pod_longitude" id="podLongitudeInput" value="{{ $shipment->pod_longitude }}">
+                    <input type="hidden" name="pod_location_name" id="podLocationNameInput" value="{{ $shipment->pod_location_name }}">
+
+                    <!-- Real-time GPS Location Status Card -->
+                    <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-700 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="relative flex h-3 w-3">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                                </span>
+                                <span class="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">Lokasi Real-Time GPS</span>
+                            </div>
+                            <button type="button" onclick="getRealtimeGPSLocation()" class="text-[10px] font-bold text-indigo-400 hover:text-indigo-300">
+                                <i class="fa-solid fa-rotate mr-1"></i> Refresh GPS
+                            </button>
+                        </div>
+                        <div id="gpsStatusText" class="text-xs text-slate-300 font-medium">
+                            <i class="fa-solid fa-spinner fa-spin mr-1"></i> Memindai koordinat GPS lokasi Anda saat ini...
+                        </div>
+                        <div id="gpsMapLink" class="{{ $shipment->pod_latitude ? '' : 'hidden' }} text-[11px] font-bold text-indigo-400 pt-1 border-t border-slate-800">
+                            <a href="{{ $shipment->pod_latitude ? 'https://maps.google.com/?q='.$shipment->pod_latitude.','.$shipment->pod_longitude : '#' }}" target="_blank" id="googleMapsUrl" class="hover:underline flex items-center">
+                                <i class="fa-solid fa-map-location-dot mr-1"></i> Buka Koordinat di Google Maps
+                            </a>
+                        </div>
                     </div>
-                    <div id="gpsMapLink" class="{{ $shipment->pod_latitude ? '' : 'hidden' }} text-[11px] font-bold text-indigo-400 pt-1 border-t border-slate-800">
-                        <a href="{{ $shipment->pod_latitude ? 'https://maps.google.com/?q='.$shipment->pod_latitude.','.$shipment->pod_longitude : '#' }}" target="_blank" id="googleMapsUrl" class="hover:underline flex items-center">
-                            <i class="fa-solid fa-map-location-dot mr-1"></i> Buka Koordinat di Google Maps
-                        </a>
+
+                    <div>
+                        <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1.5">Nama Penerima Paket *</label>
+                        <input type="text" name="pod_receiver_name" value="{{ old('pod_receiver_name', $shipment->pod_receiver_name ?? $shipment->recipient_name) }}" required
+                            placeholder="Nama orang yang menerima paket..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold text-xs focus:ring-2 focus:ring-indigo-500">
                     </div>
-                </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1.5">Nama Penerima Paket *</label>
-                    <input type="text" name="pod_receiver_name" value="{{ old('pod_receiver_name', $shipment->pod_receiver_name ?? $shipment->recipient_name) }}" required
-                        placeholder="Nama orang yang menerima paket..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold text-xs focus:ring-2 focus:ring-indigo-500">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1.5">Hubungan dengan Penerima *</label>
-                    <select name="pod_receiver_relation" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold text-xs focus:ring-2 focus:ring-indigo-500">
-                        <option value="Penerima Langsung (Ybs)">Penerima Langsung (Ybs)</option>
-                        <option value="Anggota Keluarga (Suami/Istri/Anak)">Anggota Keluarga (Suami/Istri/Anak)</option>
-                        <option value="Rekan Kerja / Staf Kantor">Rekan Kerja / Staf Kantor</option>
-                        <option value="Satpam / Security">Satpam / Security</option>
-                        <option value="Tetangga">Tetangga</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1.5">Foto Bukti Penerimaan (POD Photo)</label>
-                    <input type="file" name="pod_photo" accept="image/*" capture="environment" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-300">
-                </div>
-
-                <!-- Touch Signature Canvas -->
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider">Tanda Tangan Digital Penerima *</label>
-                        <button type="button" onclick="clearSignature()" class="text-[10px] text-rose-400 hover:underline">Clear Canvas</button>
+                    <div>
+                        <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1.5">Hubungan dengan Penerima *</label>
+                        <select name="pod_receiver_relation" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold text-xs focus:ring-2 focus:ring-indigo-500">
+                            <option value="Penerima Langsung (Ybs)">Penerima Langsung (Ybs)</option>
+                            <option value="Anggota Keluarga (Suami/Istri/Anak)">Anggota Keluarga (Suami/Istri/Anak)</option>
+                            <option value="Rekan Kerja / Staf Kantor">Rekan Kerja / Staf Kantor</option>
+                            <option value="Satpam / Security">Satpam / Security</option>
+                            <option value="Tetangga">Tetangga</option>
+                        </select>
                     </div>
-                    <div class="bg-white rounded-xl overflow-hidden border-2 border-indigo-500/50 shadow-inner">
-                        <canvas id="sigCanvas" width="340" height="150" class="w-full h-36"></canvas>
+
+                    <div>
+                        <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1.5">Foto Bukti Penerimaan (POD Photo)</label>
+                        <input type="file" name="pod_photo" accept="image/*" capture="environment" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-300">
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-1">Usap / gores layar di atas untuk membubuhkan tanda tangan.</p>
-                </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1.5">Catatan Tambahan (Opsional)</label>
-                    <input type="text" name="pod_notes" value="{{ old('pod_notes', $shipment->pod_notes) }}" placeholder="Catatan kondisi serah terima..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold text-xs">
-                </div>
+                    <!-- Touch Signature Canvas -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider">Tanda Tangan Digital Penerima *</label>
+                            <button type="button" onclick="clearSignature()" class="text-[10px] text-rose-400 hover:underline">Clear Canvas</button>
+                        </div>
+                        <div class="bg-white rounded-xl overflow-hidden border-2 border-indigo-500/50 shadow-inner">
+                            <canvas id="sigCanvas" width="340" height="150" class="w-full h-36"></canvas>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">Usap / gores layar di atas untuk membubuhkan tanda tangan.</p>
+                    </div>
 
-                <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-extrabold text-sm shadow-xl shadow-emerald-900/40 transition">
-                    <i class="fa-solid fa-check-double mr-1.5"></i> Simpan & Konfirmasi TERKIRIM
-                </button>
-            </form>
+                    <div>
+                        <label class="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-1.5">Catatan Tambahan (Opsional)</label>
+                        <input type="text" name="pod_notes" value="{{ old('pod_notes', $shipment->status === 'failed' ? '' : $shipment->pod_notes) }}" placeholder="Catatan kondisi serah terima..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-semibold text-xs">
+                    </div>
+
+                    <button type="submit" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-extrabold text-sm shadow-xl shadow-emerald-900/40 transition">
+                        <i class="fa-solid fa-check-double mr-1.5"></i> Simpan & Konfirmasi TERKIRIM
+                    </button>
+                </form>
+
+                <!-- Collapsible / Toggle Form Lapor Pengiriman Gagal -->
+                <div class="bg-slate-800/80 p-5 rounded-2xl border border-rose-500/30 space-y-3">
+                    <button type="button" onclick="toggleFailedForm()" class="w-full flex items-center justify-between text-left text-rose-300 font-bold text-xs touch-btn">
+                        <span class="flex items-center space-x-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-400 text-sm"></i>
+                            <span>{{ $shipment->status === 'failed' ? 'Perbarui Laporan Kendala Pengiriman' : 'Kendala Pengantaran? Lapor Pengiriman Gagal' }}</span>
+                        </span>
+                        <i id="failedChevron" class="fa-solid fa-chevron-{{ $shipment->status === 'failed' ? 'up' : 'down' }} text-rose-400 transition-transform"></i>
+                    </button>
+                    <p class="text-[11px] text-slate-400">Gunakan form di bawah apabila kurir tidak menemukan alamat atau salah penerima di lokasi.</p>
+
+                    <form id="failedDeliveryForm" action="{{ route('epod.store-failed', $shipment->tracking_number) }}" method="POST" enctype="multipart/form-data" class="space-y-4 pt-3 border-t border-slate-700 {{ $shipment->status === 'failed' ? '' : 'hidden' }}">
+                        @csrf
+                        <input type="hidden" name="pod_latitude" id="failedPodLatitude" value="{{ $shipment->pod_latitude }}">
+                        <input type="hidden" name="pod_longitude" id="failedPodLongitude" value="{{ $shipment->pod_longitude }}">
+                        <input type="hidden" name="pod_location_name" id="failedPodLocationName" value="{{ $shipment->pod_location_name }}">
+
+                        <div>
+                            <label class="block text-xs font-bold text-rose-300 uppercase tracking-wider mb-1.5">Alasan / Kendala Pengiriman *</label>
+                            <select name="failure_reason" id="epodFailReason" required onchange="onEpodFailReasonChanged(this)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold text-xs focus:ring-2 focus:ring-rose-500">
+                                <option value="Alamat Tidak Ditemukan / Tidak Jelas">📍 Alamat Tidak Ditemukan / Tidak Jelas</option>
+                                <option value="Salah Penerima / Penerima Tidak Dikenal di Lokasi">👤 Salah Penerima / Penerima Tidak Dikenal di Lokasi</option>
+                                <option value="Rumah / Kantor Tutup (Tidak Ada Orang)">🚪 Rumah / Kantor Tutup (Tidak Ada Orang)</option>
+                                <option value="Penerima Menolak Menerima Paket">🚫 Penerima Menolak Menerima Paket</option>
+                                <option value="Nomor Telepon Tidak Dapat Dihubungi">📞 Nomor Telepon Tidak Dapat Dihubungi</option>
+                                <option value="Lainnya">⚠️ Kendala Lainnya</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-rose-300 uppercase tracking-wider mb-1.5">Catatan Detail Kendala *</label>
+                            <textarea name="notes" id="epodFailNotes" rows="3" required placeholder="Tuliskan rincian kendala secara jelas..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-medium text-xs focus:ring-2 focus:ring-rose-500">Kurir telah tiba di area namun nomor rumah/gang pada alamat yang tertera tidak ditemukan.</textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-rose-300 uppercase tracking-wider mb-1.5">Foto Bukti Kendala di Lapangan (Opsional)</label>
+                            <input type="file" name="photo" accept="image/*" capture="environment" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-slate-300">
+                            <p class="text-[10px] text-slate-400 mt-1">Foto nomor rumah sekitar, kondisi pagar tertutup, atau lokasi jalan.</p>
+                        </div>
+
+                        <button type="submit" class="w-full py-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-rose-600/30 transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>Simpan Status Pengiriman Gagal (Hold)</span>
+                        </button>
+                    </form>
+                </div>
+            @endif
         @endif
+
+        <!-- History Logs Section (Always visible) -->
+        <div class="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/60 space-y-3">
+            <h4 class="text-xs font-extrabold uppercase text-slate-400 tracking-wider flex items-center">
+                <i class="fa-solid fa-clock-rotate-left mr-2 text-indigo-400"></i> Riwayat Pergerakan Resi
+            </h4>
+            <div class="space-y-2.5 max-h-48 overflow-y-auto text-xs pr-1">
+                @foreach($shipment->trackingLogs as $log)
+                    <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                        <div class="flex justify-between text-[10px]">
+                            <span class="font-bold text-indigo-300">{{ $log->location }}</span>
+                            <span class="text-slate-500">{{ $log->created_at->format('d/m/Y H:i') }}</span>
+                        </div>
+                        <p class="text-slate-300 text-[11px] leading-snug">{{ $log->description }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->
@@ -362,6 +448,8 @@
 
                     if (document.getElementById('podLatitudeInput')) document.getElementById('podLatitudeInput').value = lat;
                     if (document.getElementById('podLongitudeInput')) document.getElementById('podLongitudeInput').value = lng;
+                    if (document.getElementById('failedPodLatitude')) document.getElementById('failedPodLatitude').value = lat;
+                    if (document.getElementById('failedPodLongitude')) document.getElementById('failedPodLongitude').value = lng;
 
                     statusBox.innerHTML = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-location-dot mr-1"></i> GPS Terhubung: ${lat.toFixed(6)}, ${lng.toFixed(6)}</span> <span class="text-slate-400 text-[10px]">(Akurasi: ±${accuracy}m)</span>`;
 
@@ -380,6 +468,39 @@
                     maximumAge: 0
                 }
             );
+        }
+
+        function toggleFailedForm() {
+            const form = document.getElementById('failedDeliveryForm');
+            const chevron = document.getElementById('failedChevron');
+            if (form) {
+                const isHidden = form.classList.contains('hidden');
+                if (isHidden) {
+                    form.classList.remove('hidden');
+                    if (chevron) chevron.className = 'fa-solid fa-chevron-up text-rose-400 transition-transform';
+                } else {
+                    form.classList.add('hidden');
+                    if (chevron) chevron.className = 'fa-solid fa-chevron-down text-rose-400 transition-transform';
+                }
+            }
+        }
+
+        function onEpodFailReasonChanged(selectEl) {
+            const notesInput = document.getElementById('epodFailNotes');
+            if (!notesInput) return;
+            if (selectEl.value === 'Alamat Tidak Ditemukan / Tidak Jelas') {
+                notesInput.value = 'Kurir telah tiba di area namun nomor rumah/gang pada alamat yang tertera tidak ditemukan.';
+            } else if (selectEl.value === 'Salah Penerima / Penerima Tidak Dikenal di Lokasi') {
+                notesInput.value = 'Warga atau penghuni di lokasi menyatakan tidak mengenal nama penerima tersebut.';
+            } else if (selectEl.value === 'Rumah / Kantor Tutup (Tidak Ada Orang)') {
+                notesInput.value = 'Rumah/kantor penerima dalam kondisi terkunci dan tidak ada orang/penghuni di tempat.';
+            } else if (selectEl.value === 'Penerima Menolak Menerima Paket') {
+                notesInput.value = 'Penerima menolak untuk menerima paket saat hendak diserahkan.';
+            } else if (selectEl.value === 'Nomor Telepon Tidak Dapat Dihubungi') {
+                notesInput.value = 'Kurir telah mencoba menghubungi nomor telepon penerima berulang kali namun tidak aktif / tidak diangkat.';
+            } else {
+                notesInput.value = '';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppNotification;
 use App\Models\Customer;
 use App\Models\DeliveryOrder;
 use App\Models\Invoice;
@@ -69,14 +70,26 @@ class InvoiceController extends Controller
 
         $doId = $request->input('do_id');
         $selectedDo = $doId ? DeliveryOrder::with(['customer', 'items.shipment', 'shipments'])->find($doId) : null;
+        $customerId = $request->input('customer_id') ?: ($selectedDo ? $selectedDo->customer_id : old('customer_id'));
 
         $customers = Customer::orderBy('name')->get();
+
+        // Hanya DO yang belum selesai (bukan completed/komplit/cancelled/draft)
+        // dan belum memiliki tagihan invoice aktif (unpaid atau paid)
         $deliveryOrders = DeliveryOrder::with(['customer', 'shipments', 'items.shipment'])
-            ->where('status', 'approved')
+            ->whereNotIn('status', ['draft', 'cancelled', 'completed', 'komplit'])
+            ->where(function ($q) use ($selectedDo) {
+                $q->whereDoesntHave('invoice', function ($iq) {
+                    $iq->whereIn('status', ['unpaid', 'paid']);
+                });
+                if ($selectedDo) {
+                    $q->orWhere('id', $selectedDo->id);
+                }
+            })
             ->orderBy('id', 'desc')
             ->get();
 
-        return view('invoices.create', compact('customers', 'deliveryOrders', 'selectedDo'));
+        return view('invoices.create', compact('customers', 'deliveryOrders', 'selectedDo', 'customerId'));
     }
 
     public function store(Request $request)
@@ -97,6 +110,18 @@ class InvoiceController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        if (!empty($validated['delivery_order_id'])) {
+            $do = DeliveryOrder::find($validated['delivery_order_id']);
+            if ($do) {
+                if ($do->customer_id != $validated['customer_id']) {
+                    return back()->withInput()->withErrors(['delivery_order_id' => 'Delivery Order yang dipilih tidak sesuai dengan customer yang dipilih.']);
+                }
+                if (in_array($do->status, ['completed', 'komplit'])) {
+                    return back()->withInput()->withErrors(['delivery_order_id' => 'Delivery Order yang dipilih sudah berstatus komplit/selesai.']);
+                }
+            }
+        }
+
         $subtotal = (float) $validated['subtotal'];
         $tax = (float) ($validated['tax_amount'] ?? 0);
         $discount = (float) ($validated['discount_amount'] ?? 0);
@@ -116,6 +141,18 @@ class InvoiceController extends Controller
             'total_amount' => $total,
             'status' => 'unpaid',
             'notes' => $validated['notes'] ?? null,
+        ]);
+
+        $customer = Customer::find($validated['customer_id']);
+        $formattedTotal = 'Rp ' . number_format($total, 0, ',', '.');
+        AppNotification::sendToCustomer($customer, [
+            'type' => 'invoice',
+            'title' => 'Invoice Tagihan Baru',
+            'message' => "Invoice {$invNumber} sebesar {$formattedTotal} telah diterbitkan. Batas jatuh tempo: " . date('d/m/Y', strtotime($validated['due_date'])) . ".",
+            'icon' => 'fa-file-invoice-dollar',
+            'color' => 'amber',
+            'url' => route('invoices.show', $invoice->id),
+            'data' => ['invoice_id' => $invoice->id, 'invoice_number' => $invNumber],
         ]);
 
         return redirect()->route('invoices.show', $invoice->id)->with('success', 'Invoice penagihan biaya pengiriman berhasil diterbitkan.');
@@ -162,6 +199,30 @@ class InvoiceController extends Controller
         }
 
         $invoice->update($data);
+
+        // Automatically update associated Delivery Order status to completed if paid
+        if ($validated['status'] === 'paid' && $invoice->delivery_order_id) {
+            $invoice->deliveryOrder()->update(['status' => 'completed']);
+        } elseif (in_array($validated['status'], ['unpaid', 'cancelled']) && $invoice->delivery_order_id) {
+            $do = $invoice->deliveryOrder;
+            if ($do && in_array($do->status, ['completed', 'komplit'])) {
+                $do->update(['status' => 'approved']);
+            }
+        }
+
+        // Notify Customer (and Admin receives copy)
+        if ($validated['status'] === 'paid') {
+            $formattedTotal = 'Rp ' . number_format($invoice->total_amount, 0, ',', '.');
+            AppNotification::sendToCustomer($invoice->customer, [
+                'type' => 'invoice',
+                'title' => 'Pembayaran Invoice LUNAS',
+                'message' => "Pembayaran untuk Invoice {$invoice->invoice_number} sebesar {$formattedTotal} telah diverifikasi LUNAS.",
+                'icon' => 'fa-circle-check',
+                'color' => 'emerald',
+                'url' => route('invoices.show', $invoice->id),
+                'data' => ['invoice_id' => $invoice->id, 'invoice_number' => $invoice->invoice_number],
+            ]);
+        }
 
         return redirect()->route('invoices.show', $invoice->id)->with('success', 'Status pembayaran invoice berhasil diperbarui.');
     }

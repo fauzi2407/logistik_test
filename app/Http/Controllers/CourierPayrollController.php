@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppNotification;
 use App\Models\Courier;
 use App\Models\CourierCashAdvance;
 use App\Models\CourierPayroll;
@@ -239,6 +240,18 @@ class CourierPayrollController extends Controller
                     'status' => 'settled',
                     'payroll_id' => $payroll->id,
                 ]);
+
+            // Notify Courier (and Admin receives copy)
+            $formattedNetSalary = 'Rp ' . number_format($netSalary, 0, ',', '.');
+            AppNotification::sendToCourier($courier, [
+                'type' => 'payroll',
+                'title' => 'Gaji & Komisi Telah Dibayar (PAID)',
+                'message' => "Slip gaji Anda periode {$month}/{$year} sebesar {$formattedNetSalary} telah dibayarkan melalui {$payroll->payment_method}.",
+                'icon' => 'fa-money-bill-wave',
+                'color' => 'emerald',
+                'url' => route('courier-payrolls.index'),
+                'data' => ['payroll_id' => $payroll->id, 'net_salary' => $netSalary],
+            ]);
         }
 
         return redirect()->route('courier-payrolls.show', $payroll->id)->with('success', "Slip Gaji Komisi Kurir {$courier->name} berhasil diperbarui.");

@@ -214,7 +214,7 @@
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                         <i class="fa-solid fa-warehouse text-indigo-600 mr-1"></i> Hub Tujuan (Gudang Setor / Sorting Hasil Pickup) *
                     </label>
-                    <select name="destination_hub_id" id="pickupDestHubSelect" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                    <select name="destination_hub_id" id="pickupDestHubSelect" onchange="filterShipmentsByCourierHub()" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
                         <option value="">-- Pilih Hub Tujuan Setor --</option>
                         @foreach($hubs as $hb)
                             <option value="{{ $hb->id }}">{{ $hb->name }} ({{ $hb->city }})</option>
@@ -228,7 +228,7 @@
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                             <i class="fa-solid fa-plane-departure text-cyan-600 mr-1"></i> Hub Dari (Asal Transfer) *
                         </label>
-                        <select name="origin_hub_id" id="transferOriginHubSelect" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                        <select name="origin_hub_id" id="transferOriginHubSelect" onchange="this.dataset.userModified='true'; filterShipmentsByCourierHub()" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
                             <option value="">-- Pilih Hub Asal --</option>
                             @foreach($hubs as $hb)
                                 <option value="{{ $hb->id }}">{{ $hb->name }} ({{ $hb->city }})</option>
@@ -239,7 +239,7 @@
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                             <i class="fa-solid fa-plane-arrival text-emerald-600 mr-1"></i> Hub Ke (Tujuan Transfer) *
                         </label>
-                        <select name="destination_hub_id" id="transferDestHubSelect" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                        <select name="destination_hub_id" id="transferDestHubSelect" onchange="filterShipmentsByCourierHub()" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
                             <option value="">-- Pilih Hub Tujuan --</option>
                             @foreach($hubs as $hb)
                                 <option value="{{ $hb->id }}">{{ $hb->name }} ({{ $hb->city }})</option>
@@ -290,11 +290,15 @@
 
                 <div class="max-h-64 overflow-y-auto border border-slate-200 rounded-xl p-3 space-y-2 bg-slate-50" id="shipmentListContainer">
                     @forelse($unassignedShipments as $s)
+                        @php
+                            $hasArrivedAtDest = ($s->destination_hub_id && $s->current_hub_id && $s->current_hub_id == $s->destination_hub_id);
+                        @endphp
                         <label class="shipment-item flex items-center justify-between text-xs text-slate-800 font-semibold cursor-pointer p-2.5 rounded-xl bg-white border border-slate-200/90 hover:border-indigo-400 hover:shadow-sm transition"
                                data-status="{{ $s->status }}"
                                data-origin-hub="{{ $s->origin_hub_id }}"
                                data-dest-hub="{{ $s->destination_hub_id }}"
-                               data-current-hub="{{ $s->current_hub_id }}">
+                               data-current-hub="{{ $s->current_hub_id }}"
+                               data-has-arrived-dest="{{ $hasArrivedAtDest ? 'true' : 'false' }}">
                             <div class="flex items-center space-x-3 overflow-hidden">
                                 <input type="checkbox" name="shipment_ids[]" value="{{ $s->id }}" class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
                                 <div class="truncate">
@@ -318,6 +322,16 @@
                                         <span class="px-1.5 py-0.2 rounded text-[10px] font-bold uppercase {{ $s->status === 'pending' || $s->status === 'draft' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800' }}">
                                             {{ str_replace('_', ' ', $s->status) }}
                                         </span>
+
+                                        @if($hasArrivedAtDest)
+                                            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                <i class="fa-solid fa-check-circle mr-0.5"></i>Tiba di Hub Tujuan ({{ $s->destinationHub ? $s->destinationHub->name : 'Tujuan' }})
+                                            </span>
+                                        @elseif($s->currentHub && $s->current_hub_id != $s->origin_hub_id)
+                                            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold bg-sky-100 text-sky-800 border border-sky-200">
+                                                <i class="fa-solid fa-location-arrow mr-0.5"></i>Di {{ $s->currentHub->name }}
+                                            </span>
+                                        @endif
                                     </div>
                                     <div class="text-[11px] text-slate-500 mt-1 flex items-center flex-wrap gap-2">
                                         <span><strong>Pengirim:</strong> {{ $s->sender_name }} ({{ $s->sender_city }})</span>
@@ -448,7 +462,7 @@
             }
         }
 
-        // Determine active filter hub for Delivery
+        // Determine active filter hub based on assignment type
         let activeHubId = hubId;
         let activeHubName = hubName;
 
@@ -457,6 +471,14 @@
                 activeHubId = deliveryHubSelect.value;
                 activeHubName = deliveryHubSelect.options[deliveryHubSelect.selectedIndex]?.text;
             }
+        } else if (assignmentType === 'transfer') {
+            if (transferOriginHub && !transferOriginHub.disabled && transferOriginHub.value) {
+                activeHubId = transferOriginHub.value;
+                activeHubName = transferOriginHub.options[transferOriginHub.selectedIndex]?.text;
+            }
+        } else if (assignmentType === 'pickup') {
+            activeHubId = hubId;
+            activeHubName = hubName;
         }
 
         const items = document.querySelectorAll('#shipmentListContainer .shipment-item');
@@ -467,6 +489,11 @@
             const destHub = item.getAttribute('data-dest-hub');
             const currentHub = item.getAttribute('data-current-hub');
             const status = item.getAttribute('data-status');
+
+            // Posisi fisik hub paket saat ini: current_hub jika ada, atau origin_hub jika belum bergerak
+            const effectiveHub = currentHub ? currentHub : originHub;
+            // Paket sudah sampai di hub tujuan jika current_hub sama dengan dest_hub
+            const hasArrivedAtDest = Boolean(destHub && currentHub && currentHub == destHub);
 
             // Filter status based on assignment_type
             let statusMatch = false;
@@ -483,17 +510,48 @@
                 statusMatch = true;
             }
 
-            let hubMatch = true;
+            let hubMatch = false;
             if (showAll) {
-                hubMatch = true;
+                // Jika "Tampilkan Semua Hub" dicentang:
+                // Transfer: paket yang sudah sampai di hub tujuan tidak boleh ditransfer lagi
+                if (assignmentType === 'transfer') {
+                    hubMatch = !hasArrivedAtDest;
+                } else {
+                    hubMatch = true;
+                }
+            } else if (hasArrivedAtDest && activeHubId && activeHubId == originHub && originHub != destHub) {
+                // ATURAN UTAMA: Resi yang sudah sampai hub tujuan TIDAK BOLEH muncul lagi di hub asal!
+                hubMatch = false;
+            } else if (assignmentType === 'transfer') {
+                const transferDestId = (transferDestHub && !transferDestHub.disabled && transferDestHub.value) ? transferDestHub.value : null;
+
+                // Paket yang sudah sampai di hub tujuan tidak boleh ditransfer ulang
+                if (hasArrivedAtDest) {
+                    hubMatch = false;
+                } else {
+                    // Paket harus secara fisik berada di Hub Asal Transfer
+                    const isAtOriginHub = (!activeHubId || effectiveHub == activeHubId);
+                    // Jika Hub Tujuan Transfer dipilih di form, pastikan paket tujuannya sesuai
+                    const matchesDest = (!transferDestId || !destHub || destHub == transferDestId);
+                    hubMatch = isAtOriginHub && matchesDest;
+                }
             } else if (assignmentType === 'delivery') {
                 if (activeHubId && activeHubId !== "") {
-                    hubMatch = (currentHub == activeHubId || destHub == activeHubId || originHub == activeHubId);
+                    // Delivery ke penerima:
+                    // 1. Paket harus secara fisik berada di hub pengantaran (effectiveHub == activeHubId)
+                    // 2. Dan tujuan pengantaran paket adalah area hub ini (destHub == activeHubId, atau jika tanpa destHub maka originHub == activeHubId)
+                    const isAtActiveHub = (effectiveHub == activeHubId);
+                    const isDestActiveHub = destHub ? (destHub == activeHubId) : (originHub == activeHubId);
+                    hubMatch = isAtActiveHub && isDestActiveHub;
                 } else {
-                    hubMatch = true; // Jika Semua Hub dipilih pada dropdown
+                    // Jika Semua Hub dipilih pada dropdown delivery hub
+                    hubMatch = true;
                 }
+            } else if (assignmentType === 'pickup') {
+                // Pickup: paket dijemput dari pengirim di area hub asal kurir
+                hubMatch = (!activeHubId || originHub == activeHubId) && !hasArrivedAtDest;
             } else {
-                hubMatch = (!activeHubId || activeHubId === "" || originHub == activeHubId || destHub == activeHubId || currentHub == activeHubId);
+                hubMatch = (!activeHubId || effectiveHub == activeHubId);
             }
 
             if (statusMatch && hubMatch) {
@@ -518,6 +576,12 @@
                     badge.innerHTML = `<i class="fa-solid fa-filter text-emerald-600 mr-1.5"></i> Terfilter [<strong>${typeLabel}</strong>]: <strong>${visibleCount} paket AWB</strong> di Gudang Hub: <strong>${activeHubName}</strong>`;
                 } else {
                     badge.innerHTML = `<i class="fa-solid fa-warehouse text-emerald-600 mr-1.5"></i> Tipe [<strong>${typeLabel}</strong>]: Menampilkan <strong>${visibleCount} paket AWB</strong> (Semua Hub).`;
+                }
+            } else if (assignmentType === 'transfer') {
+                if (activeHubId && activeHubName && activeHubId !== "") {
+                    badge.innerHTML = `<i class="fa-solid fa-plane-departure text-cyan-600 mr-1.5"></i> Terfilter [<strong>${typeLabel}</strong>]: <strong>${visibleCount} paket AWB</strong> siap transfer dari Hub: <strong>${activeHubName}</strong>`;
+                } else {
+                    badge.innerHTML = `<i class="fa-solid fa-plane-departure text-cyan-600 mr-1.5"></i> Tipe [<strong>${typeLabel}</strong>]: Menampilkan <strong>${visibleCount} paket AWB</strong> siap transfer.`;
                 }
             } else if (hubId && hubName) {
                 badge.innerHTML = `<i class="fa-solid fa-filter text-indigo-600 mr-1.5"></i> Terfilter [<strong>${typeLabel}</strong>]: <strong>${visibleCount} paket AWB</strong> cocok dengan Gudang Hub Kurir: <strong>${hubName}</strong>`;

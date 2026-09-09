@@ -15,18 +15,29 @@
         </a>
     </div>
 
+    @if(isset($errors) && $errors->any())
+        <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-1">
+            <div class="font-bold flex items-center"><i class="fa-solid fa-circle-exclamation mr-1.5"></i> Periksa kembali input formulir:</div>
+            <ul class="list-disc pl-5">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <form action="{{ route('invoices.store') }}" method="POST" class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-5">
         @csrf
 
         <!-- Customer & DO Selection -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Cari & Pilih Customer *</label>
-                <input type="text" onkeyup="filterSelectOptions(this, 'customerSelect')" placeholder="🔍 Cari customer..." class="w-full px-3 py-1.5 mb-1.5 rounded-xl bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-800">
-                <select name="customer_id" id="customerSelect" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
-                    <option value="">-- Pilih Customer --</option>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">1. Pilih Customer Pengirim *</label>
+                <input type="text" onkeyup="filterSelectOptions(this, 'customerSelect')" placeholder="🔍 Cari nama customer..." class="w-full px-3 py-1.5 mb-1.5 rounded-xl bg-slate-50 border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500">
+                <select name="customer_id" id="customerSelect" required onchange="onCustomerChange(this.value)" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500">
+                    <option value="">-- Pilih Customer Terlebih Dahulu --</option>
                     @foreach($customers as $c)
-                        <option value="{{ $c->id }}" {{ (old('customer_id') == $c->id || ($selectedDo && $selectedDo->customer_id == $c->id)) ? 'selected' : '' }}>
+                        <option value="{{ $c->id }}" {{ (old('customer_id', $customerId) == $c->id || ($selectedDo && $selectedDo->customer_id == $c->id)) ? 'selected' : '' }}>
                             {{ $c->company_name ?: $c->name }} ({{ $c->city }})
                         </option>
                     @endforeach
@@ -34,23 +45,18 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Referensi DO Surat Jalan (Opsional)</label>
-                <select name="delivery_order_id" id="doSelect" onchange="onDoSelected(this)" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
-                    <option value="">-- Tanpa DO (Input Manual) --</option>
-                    @foreach($deliveryOrders as $do)
-                        @php
-                            $doTotal = ($do->shipments && $do->shipments->count() > 0) ? $do->shipments->sum('total_amount') : 0;
-                            if ($doTotal == 0 && $do->items) {
-                                $doTotal = $do->items->sum(function($item) {
-                                    return $item->shipment ? $item->shipment->total_amount : (12000 * max(1, (int) ceil((float)$item->weight_kg)));
-                                });
-                            }
-                        @endphp
-                        <option value="{{ $do->id }}" data-customer="{{ $do->customer_id }}" data-amount="{{ $doTotal }}" {{ ($selectedDo && $selectedDo->id == $do->id) ? 'selected' : '' }}>
-                            {{ $do->do_number }} - {{ $do->customer ? ($do->customer->company_name ?: $do->customer->name) : 'Customer' }} (Rp {{ number_format($doTotal, 0, ',', '.') }})
-                        </option>
-                    @endforeach
-                </select>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">2. Referensi DO Surat Jalan</label>
+                    <span id="doCountBadge" class="text-[10px] font-extrabold text-indigo-600"></span>
+                </div>
+                <div class="space-y-1.5">
+                    <select name="delivery_order_id" id="doSelect" onchange="onDoSelected(this)" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500">
+                        <option value="">-- Pilih Customer Terlebih Dahulu --</option>
+                    </select>
+                    <div id="doHelperText" class="text-[11px] text-slate-500 flex items-center">
+                        <i class="fa-solid fa-circle-info text-slate-400 mr-1.5"></i> Silakan pilih customer di sebelah kiri untuk menampilkan DO yang belum selesai.
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -139,6 +145,29 @@
 
 @push('scripts')
 <script>
+    // Master data DO yang belum selesai
+    const allDeliveryOrders = [
+        @foreach($deliveryOrders as $do)
+            @php
+                $doTotal = ($do->shipments && $do->shipments->count() > 0) ? $do->shipments->sum('total_amount') : 0;
+                if ($doTotal == 0 && $do->items) {
+                    $doTotal = $do->items->sum(function($item) {
+                        return $item->shipment ? $item->shipment->total_amount : (12000 * max(1, (int) ceil((float)$item->weight_kg)));
+                    });
+                }
+            @endphp
+            {
+                id: {{ $do->id }},
+                customerId: {{ $do->customer_id }},
+                doNumber: "{{ $do->do_number }}",
+                status: "{{ $do->status }}",
+                orderDate: "{{ $do->order_date ? $do->order_date->format('d/m/Y') : '' }}",
+                amount: {{ (float) $doTotal }},
+                itemsCount: {{ count($do->items) }},
+            },
+        @endforeach
+    ];
+
     function filterSelectOptions(inputElem, selectId) {
         const filter = inputElem.value.toLowerCase();
         const select = document.getElementById(selectId);
@@ -155,15 +184,77 @@
         }
     }
 
+    function filterDoByCustomer(customerId, selectedDoId = null) {
+        const doSelect = document.getElementById('doSelect');
+        const badge = document.getElementById('doCountBadge');
+        const helper = document.getElementById('doHelperText');
+        if (!doSelect) return;
+
+        doSelect.innerHTML = '';
+
+        if (!customerId) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = '-- Pilih Customer Terlebih Dahulu --';
+            doSelect.appendChild(opt);
+            if (badge) badge.textContent = '';
+            if (helper) {
+                helper.innerHTML = '<i class="fa-solid fa-circle-info text-slate-400 mr-1.5"></i> Silakan pilih customer di sebelah kiri untuk menampilkan DO yang belum selesai.';
+            }
+            return;
+        }
+
+        const filtered = allDeliveryOrders.filter(item => String(item.customerId) === String(customerId));
+
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = '-- Tanpa DO (Input Manual Biaya Pengiriman) --';
+        doSelect.appendChild(defaultOpt);
+
+        if (filtered.length === 0) {
+            if (badge) badge.innerHTML = '<span class="text-amber-600">0 DO Belum Selesai</span>';
+            if (helper) {
+                helper.innerHTML = '<span class="text-amber-600 font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Tidak ada DO yang belum selesai untuk customer ini. Anda tetap dapat menginput nominal tagihan manual.</span>';
+            }
+        } else {
+            if (badge) badge.innerHTML = `<span class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"><i class="fa-solid fa-check mr-1"></i> ${filtered.length} DO Belum Selesai</span>`;
+            if (helper) {
+                helper.innerHTML = `<span class="text-indigo-600 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i> Ditemukan ${filtered.length} DO belum selesai milik customer ini.</span>`;
+            }
+
+            filtered.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.setAttribute('data-customer', item.customerId);
+                opt.setAttribute('data-amount', item.amount);
+                const formattedAmount = 'Rp ' + Number(item.amount).toLocaleString('id-ID');
+                opt.textContent = `${item.doNumber} [${item.status.toUpperCase()}] • ${item.itemsCount} Item • ${formattedAmount}`;
+                if (selectedDoId && String(selectedDoId) === String(item.id)) {
+                    opt.selected = true;
+                }
+                doSelect.appendChild(opt);
+            });
+        }
+    }
+
+    function onCustomerChange(customerId) {
+        const doSelect = document.getElementById('doSelect');
+        const currentDoId = doSelect ? doSelect.value : null;
+
+        // Check if currently selected DO belongs to new customer
+        const isCurrentDoValid = allDeliveryOrders.some(d => String(d.id) === String(currentDoId) && String(d.customerId) === String(customerId));
+
+        filterDoByCustomer(customerId, isCurrentDoValid ? currentDoId : null);
+
+        if (!isCurrentDoValid) {
+            if (doSelect) doSelect.value = '';
+        }
+    }
+
     function onDoSelected(selectElem) {
         const selectedOpt = selectElem.options[selectElem.selectedIndex];
         if (selectedOpt && selectedOpt.value !== "") {
-            const customerId = selectedOpt.getAttribute('data-customer');
             const amount = selectedOpt.getAttribute('data-amount');
-            
-            if (customerId) {
-                document.getElementById('customerSelect').value = customerId;
-            }
             if (amount && parseFloat(amount) > 0) {
                 document.getElementById('subtotalInput').value = amount;
                 calculateTotal();
@@ -193,6 +284,22 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        const customerSelect = document.getElementById('customerSelect');
+        const initialCustomerId = customerSelect ? customerSelect.value : null;
+        const initialDoId = "{{ old('delivery_order_id', $selectedDo ? $selectedDo->id : '') }}";
+
+        if (initialCustomerId) {
+            filterDoByCustomer(initialCustomerId, initialDoId);
+            if (initialDoId) {
+                const doSelect = document.getElementById('doSelect');
+                if (doSelect && doSelect.value) {
+                    onDoSelected(doSelect);
+                }
+            }
+        } else {
+            filterDoByCustomer(null, null);
+        }
+
         calculateTotal();
     });
 </script>

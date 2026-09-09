@@ -13,6 +13,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\TariffController;
 use App\Http\Controllers\TrackingController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
@@ -31,11 +32,21 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/epod/{tracking_number}', [EpodController::class, 'show'])->name('epod.show');
 Route::post('/epod/{tracking_number}', [EpodController::class, 'store'])->name('epod.store');
 Route::post('/epod/{tracking_number}/transit', [EpodController::class, 'storeTransit'])->name('epod.store-transit');
+Route::post('/epod/{tracking_number}/failed', [EpodController::class, 'storeFailed'])->name('epod.store-failed');
 
 // Protected Internal Management Routes
 Route::middleware(['auth'])->group(function () {
     // Executive Dashboard (Accessible to all authenticated users based on role view)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Central Notifications (Accessible to all authenticated roles: Admin, Staff, Courier, Customer)
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::delete('/notifications/delete-all-read', [NotificationController::class, 'deleteAllRead'])->name('notifications.delete-all-read');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::post('/notifications/broadcast', [NotificationController::class, 'broadcast'])->name('notifications.broadcast');
 
     Route::middleware(['permission'])->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
@@ -65,6 +76,7 @@ Route::middleware(['auth'])->group(function () {
     // Resi / Shipments (AWB)
     Route::get('/shipments/{id}/print-label', [ShipmentController::class, 'printLabel'])->name('shipments.print-label');
     Route::post('/shipments/{id}/status', [ShipmentController::class, 'updateStatus'])->name('shipments.update-status');
+    Route::post('/shipments/{id}/failed', [ShipmentController::class, 'reportFailedDelivery'])->name('shipments.report-failed');
     Route::post('/shipments/{id}/complete-task', [ShipmentController::class, 'completeTask'])->name('shipments.complete-task');
     Route::resource('shipments', ShipmentController::class);
 

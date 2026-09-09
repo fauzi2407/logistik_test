@@ -7,12 +7,13 @@ use App\Models\CourierAssignment;
 use App\Models\Customer;
 use App\Models\DeliveryOrder;
 use App\Models\Shipment;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -49,22 +50,83 @@ class DashboardController extends Controller
         if ($user && $user->role === 'customer') {
             $customer = Customer::where('email', $user->email)->orWhere('user_id', $user->id)->first();
 
-            $myDeliveryOrders = collect();
-            $myShipments = collect();
+            $totalDOCount = 0;
+            $totalShipmentCount = 0;
+            $inTransitCount = 0;
+            $deliveredCount = 0;
+
+            $searchDo = $request->input('search_do', $request->input('search'));
+            $statusDo = $request->input('status_do');
+
+            $searchShipment = $request->input('search_shipment', $request->input('search'));
+            $statusShipment = $request->input('status_shipment');
 
             if ($customer) {
+                $totalDOCount = DeliveryOrder::where('customer_id', $customer->id)->count();
+                $totalShipmentCount = Shipment::where('customer_id', $customer->id)->count();
+                $inTransitCount = Shipment::where('customer_id', $customer->id)->where('status', '!=', 'delivered')->count();
+                $deliveredCount = Shipment::where('customer_id', $customer->id)->where('status', 'delivered')->count();
+
                 $myDeliveryOrders = DeliveryOrder::with(['items', 'shipment'])
                     ->where('customer_id', $customer->id)
+                    ->when($searchDo, function ($q, $search) {
+                        $q->where(function ($sub) use ($search) {
+                            $sub->where('do_number', 'like', "%{$search}%")
+                                ->orWhere('recipient_name', 'like', "%{$search}%")
+                                ->orWhere('recipient_city', 'like', "%{$search}%")
+                                ->orWhereHas('items', function ($iq) use ($search) {
+                                    $iq->where('recipient_name', 'like', "%{$search}%")
+                                        ->orWhere('recipient_city', 'like', "%{$search}%")
+                                        ->orWhere('item_name', 'like', "%{$search}%")
+                                        ->orWhere('account_ref', 'like', "%{$search}%");
+                                });
+                        });
+                    })
+                    ->when($statusDo, function ($q, $status) {
+                        if ($status === 'completed' || $status === 'komplit') {
+                            $q->whereIn('status', ['completed', 'komplit']);
+                        } else {
+                            $q->where('status', $status);
+                        }
+                    })
                     ->latest()
-                    ->get();
+                    ->paginate(10, ['*'], 'do_page')
+                    ->withQueryString();
 
                 $myShipments = Shipment::with(['originHub', 'destinationHub'])
                     ->where('customer_id', $customer->id)
+                    ->when($searchShipment, function ($q, $search) {
+                        $q->where(function ($sub) use ($search) {
+                            $sub->where('tracking_number', 'like', "%{$search}%")
+                                ->orWhere('recipient_name', 'like', "%{$search}%")
+                                ->orWhere('recipient_city', 'like', "%{$search}%")
+                                ->orWhere('service_type', 'like', "%{$search}%");
+                        });
+                    })
+                    ->when($statusShipment, function ($q, $status) {
+                        $q->where('status', $status);
+                    })
                     ->latest()
-                    ->get();
+                    ->paginate(10, ['*'], 'shipment_page')
+                    ->withQueryString();
+            } else {
+                $myDeliveryOrders = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1, ['pageName' => 'do_page']);
+                $myShipments = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10, 1, ['pageName' => 'shipment_page']);
             }
 
-            return view('customer.dashboard', compact('customer', 'myDeliveryOrders', 'myShipments'));
+            return view('customer.dashboard', compact(
+                'customer',
+                'myDeliveryOrders',
+                'myShipments',
+                'totalDOCount',
+                'totalShipmentCount',
+                'inTransitCount',
+                'deliveredCount',
+                'searchDo',
+                'statusDo',
+                'searchShipment',
+                'statusShipment'
+            ));
         }
 
         // 3. Executive Admin & Operational Staff View

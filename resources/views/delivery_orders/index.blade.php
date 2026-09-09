@@ -11,12 +11,23 @@
             <p class="text-xs text-slate-500 mt-0.5">Kelola dokumen Surat Jalan dan daftar pesanan pengiriman dari Customer.</p>
         </div>
         <div class="flex items-center space-x-3 w-full md:w-auto">
-            <form action="{{ route('delivery-orders.index') }}" method="GET" class="flex-1 md:w-64">
-                <div class="relative">
+            <form action="{{ route('delivery-orders.index') }}" method="GET" class="flex items-center space-x-2 flex-1 md:flex-initial">
+                <div class="relative flex-1 md:w-56">
                     <input type="text" name="search" value="{{ $search }}" placeholder="Cari No. DO, penerima, kota..." 
                         class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
                 </div>
+                <select name="status" onchange="this.form.submit()" class="px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Semua Status</option>
+                    <option value="draft" {{ $status == 'draft' ? 'selected' : '' }}>Draft</option>
+                    <option value="pending" {{ $status == 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="approved" {{ $status == 'approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="processing" {{ $status == 'processing' ? 'selected' : '' }}>Processing</option>
+                    <option value="shipped" {{ $status == 'shipped' ? 'selected' : '' }}>Shipped</option>
+                    <option value="delivered" {{ $status == 'delivered' ? 'selected' : '' }}>Delivered</option>
+                    <option value="completed" {{ in_array($status, ['completed', 'komplit']) ? 'selected' : '' }}>Komplit (Lunas)</option>
+                    <option value="cancelled" {{ $status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                </select>
             </form>
             <a href="{{ route('delivery-orders.create') }}" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 transition flex-shrink-0">
                 <i class="fa-solid fa-plus mr-1.5"></i> Buat DO Baru
@@ -60,8 +71,9 @@
                                 </div>
                                 <div class="text-[10px] text-slate-400 font-normal">({{ $hub ? $hub->city : $do->sender_city }})</div>
                             </td>
-                            <td class="p-4 text-slate-700">
-                                <div>{{ $do->order_date->format('d M Y') }}</div>
+                            <td class="p-4 text-slate-500">
+                                <div class="font-bold text-slate-800">{{ $do->order_date->format('d/m/Y') }}</div>
+                                <div class="text-[10px] text-slate-400">{{ $do->created_at->diffForHumans() }}</div>
                             </td>
                             <td class="p-4 text-slate-900">
                                 <div class="font-bold">{{ $do->recipient_name }}</div>
@@ -73,9 +85,7 @@
                                 </span>
                             </td>
                             <td class="p-4">
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-800">
-                                    {{ $do->status }}
-                                </span>
+                                {!! $do->status_badge !!}
                             </td>
                             <td class="p-4 text-right space-x-1">
                                 <a href="{{ route('delivery-orders.show', $do->id) }}" class="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-bold text-xs" title="Lihat Detail & Tagihan">

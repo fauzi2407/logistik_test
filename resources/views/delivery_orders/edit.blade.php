@@ -75,6 +75,7 @@
                         <option value="processing" {{ $deliveryOrder->status == 'processing' ? 'selected' : '' }}>Processing</option>
                         <option value="shipped" {{ $deliveryOrder->status == 'shipped' ? 'selected' : '' }}>Shipped</option>
                         <option value="delivered" {{ $deliveryOrder->status == 'delivered' ? 'selected' : '' }}>Delivered</option>
+                        <option value="completed" {{ in_array($deliveryOrder->status, ['completed', 'komplit']) ? 'selected' : '' }}>Komplit (Lunas)</option>
                         <option value="cancelled" {{ $deliveryOrder->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     </select>
                 </div>

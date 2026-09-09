@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppNotification;
 use App\Models\Courier;
 use App\Models\CourierCashAdvance;
 use Illuminate\Http\Request;
@@ -157,6 +158,30 @@ class CourierCashAdvanceController extends Controller
         ]);
 
         $formattedAmount = 'Rp ' . number_format($request->amount, 0, ',', '.');
+
+        // Send notifications
+        if ($status === 'approved') {
+            AppNotification::sendToCourier($courier, [
+                'type' => 'cash_advance',
+                'title' => 'Kasbon Disetujui',
+                'message' => "Kasbon {$advanceNumber} sebesar {$formattedAmount} telah dibuat dan langsung disetujui Admin.",
+                'icon' => 'fa-circle-check',
+                'color' => 'emerald',
+                'url' => route('courier-cash-advances.index'),
+                'data' => ['advance_id' => $advance->id],
+            ]);
+        } else {
+            AppNotification::sendToStaff([
+                'type' => 'cash_advance',
+                'title' => 'Permohonan Kasbon Kurir',
+                'message' => "Kurir {$courier->name} mengajukan kasbon {$formattedAmount} ({$advanceNumber}). Menunggu verifikasi.",
+                'icon' => 'fa-hand-holding-dollar',
+                'color' => 'amber',
+                'url' => route('courier-cash-advances.index'),
+                'data' => ['advance_id' => $advance->id, 'courier_id' => $courier->id],
+            ]);
+        }
+
         $msg = $loggedInCourier
             ? "Permohonan kasbon ({$advanceNumber}) sebesar {$formattedAmount} berhasil diajukan dan sedang menunggu persetujuan Admin."
             : "Kasbon ({$advanceNumber}) sebesar {$formattedAmount} untuk kurir {$courier->name} berhasil dibuat.";
@@ -187,6 +212,18 @@ class CourierCashAdvanceController extends Controller
         ]);
 
         $formattedAmount = 'Rp ' . number_format($advance->amount, 0, ',', '.');
+
+        // Notify Courier (and Admin receives copy)
+        AppNotification::sendToCourier($advance->courier, [
+            'type' => 'cash_advance',
+            'title' => 'Pengajuan Kasbon Disetujui',
+            'message' => "Pengajuan kasbon {$advance->advance_number} sebesar {$formattedAmount} telah DISETUJUI oleh " . Auth::user()->name . ".",
+            'icon' => 'fa-circle-check',
+            'color' => 'emerald',
+            'url' => route('courier-cash-advances.index'),
+            'data' => ['advance_id' => $advance->id],
+        ]);
+
         return redirect()->back()->with('success', "Kasbon {$advance->advance_number} ({$formattedAmount}) untuk kurir {$advance->courier->name} telah BERHASIL DISETUJUI.");
     }
 
@@ -213,6 +250,17 @@ class CourierCashAdvanceController extends Controller
             'approved_by' => Auth::id(),
             'approved_at' => now(),
             'approval_notes' => $notes,
+        ]);
+
+        // Notify Courier (and Admin receives copy)
+        AppNotification::sendToCourier($advance->courier, [
+            'type' => 'cash_advance',
+            'title' => 'Pengajuan Kasbon Ditolak',
+            'message' => "Pengajuan kasbon {$advance->advance_number} telah DITOLAK oleh " . Auth::user()->name . ". Catatan: {$notes}",
+            'icon' => 'fa-circle-xmark',
+            'color' => 'rose',
+            'url' => route('courier-cash-advances.index'),
+            'data' => ['advance_id' => $advance->id],
         ]);
 
         return redirect()->back()->with('success', "Kasbon {$advance->advance_number} untuk kurir {$advance->courier->name} telah DITOLAK.");

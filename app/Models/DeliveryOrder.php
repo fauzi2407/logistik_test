@@ -93,9 +93,38 @@ class DeliveryOrder extends Model
         return BranchHub::first();
     }
 
+    public function isCompleted(): bool
+    {
+        return in_array($this->status, ['completed', 'komplit']);
+    }
+
+    public function getStatusBadgeAttribute(): string
+    {
+        switch ($this->status) {
+            case 'completed':
+            case 'komplit':
+                return '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i> Komplit (Lunas)</span>';
+            case 'delivered':
+                return '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200"><i class="fa-solid fa-truck-ramp-box mr-1"></i> Delivered</span>';
+            case 'shipped':
+                return '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-blue-100 text-blue-800 border border-blue-200"><i class="fa-solid fa-truck-fast mr-1"></i> Shipped</span>';
+            case 'processing':
+                return '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-cyan-100 text-cyan-800 border border-cyan-200"><i class="fa-solid fa-boxes-packing mr-1"></i> Processing</span>';
+            case 'approved':
+                return '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-indigo-100 text-indigo-800 border border-indigo-200"><i class="fa-solid fa-check mr-1"></i> Approved</span>';
+            case 'pending':
+                return '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-200"><i class="fa-solid fa-clock mr-1"></i> Pending</span>';
+            case 'cancelled':
+                return '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-rose-100 text-rose-800 border border-rose-200"><i class="fa-solid fa-ban mr-1"></i> Cancelled</span>';
+            case 'draft':
+            default:
+                return '<span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-slate-100 text-slate-800 border border-slate-200">' . htmlspecialchars(strtoupper($this->status ?? 'DRAFT')) . '</span>';
+        }
+    }
+
     public function isPickedUp(): bool
     {
-        if (in_array($this->status, ['shipped', 'delivered'])) {
+        if (in_array($this->status, ['shipped', 'delivered', 'completed', 'komplit'])) {
             return true;
         }
 

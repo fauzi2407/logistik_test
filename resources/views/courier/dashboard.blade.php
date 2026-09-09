@@ -174,9 +174,11 @@
         $deliveryCount = $assignedShipments->filter(fn($s) => in_array($s->status, ['in_transit', 'out_for_delivery']))->count();
         // Selesai: terkirim ke penerima atau sudah diserahkan ke hub sortir (In-Hub)
         $doneCount = $assignedShipments->filter(fn($s) => in_array($s->status, ['delivered', 'in_sorting_hub']))->count();
+        // Gagal: kendala alamat tidak ditemukan / salah penerima
+        $failedCount = $assignedShipments->filter(fn($s) => $s->status === 'failed')->count();
     @endphp
 
-    <div class="grid grid-cols-4 gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200/80 shadow-sm text-center text-xs font-bold">
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 bg-white p-1.5 rounded-2xl border border-slate-200/80 shadow-sm text-center text-xs font-bold">
         <button onclick="filterStatus('all')" class="filter-btn py-2 rounded-xl bg-indigo-600 text-white transition touch-btn text-[11px]" id="btn-all">
             Semua ({{ count($assignedShipments) }})
         </button>
@@ -189,6 +191,9 @@
         <button onclick="filterStatus('delivered')" class="filter-btn py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition touch-btn text-[11px]" id="btn-delivered">
             ✅ Selesai ({{ $doneCount }})
         </button>
+        <button onclick="filterStatus('failed')" class="filter-btn py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition touch-btn text-[11px]" id="btn-failed">
+            ❌ Gagal ({{ $failedCount }})
+        </button>
     </div>
 
     <!-- Assigned Shipments List (Mobile Touch Cards) -->
@@ -196,23 +201,29 @@
         @forelse($assignedShipments as $s)
             @php
                 $isDone = in_array($s->status, ['delivered', 'in_sorting_hub']);
+                $isFailed = ($s->status === 'failed');
                 $isActivePickup = in_array($s->status, ['pending', 'picked_up']);
                 $isActiveDelivery = in_array($s->status, ['in_transit', 'out_for_delivery']);
 
-                // Category for tab filtering: 'pickup' | 'delivery' | 'delivered'
-                $cardCategory = $isDone ? 'delivered' : ($isActivePickup ? 'pickup' : 'delivery');
+                // Category for tab filtering: 'pickup' | 'delivery' | 'delivered' | 'failed'
+                $cardCategory = $isFailed ? 'failed' : ($isDone ? 'delivered' : ($isActivePickup ? 'pickup' : 'delivery'));
             @endphp
             
             <div class="shipment-card bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-4 hover:border-indigo-300 transition" 
                  data-type="{{ $cardCategory }}" 
                  data-status="{{ $s->status }}"
-                 data-is-done="{{ $isDone ? 'true' : 'false' }}">
+                 data-is-done="{{ $isDone ? 'true' : 'false' }}"
+                 data-is-failed="{{ $isFailed ? 'true' : 'false' }}">
                 
                 <!-- Card Header with Task Type Badge -->
                 <div class="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">
                     <div>
                         <div class="flex items-center flex-wrap gap-1.5">
-                            @if($s->status === 'in_sorting_hub')
+                            @if($s->status === 'failed')
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-300">
+                                    <i class="fa-solid fa-triangle-exclamation mr-0.5"></i> Pengiriman Gagal (Hold)
+                                </span>
+                            @elseif($s->status === 'in_sorting_hub')
                                 <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
                                     <i class="fa-solid fa-warehouse mr-0.5"></i> Masuk Hub Sortir (Selesai)
                                 </span>
@@ -238,9 +249,9 @@
                         </div>
                         <div class="font-mono font-black text-indigo-600 text-base leading-tight mt-1">{{ $s->tracking_number }}</div>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-extrabold uppercase shrink-0 {{ $isDone ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : ($s->status == 'pending' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-amber-100 text-amber-800 border border-amber-200') }}">
-                        <i class="fa-solid {{ $s->status == 'delivered' ? 'fa-circle-check' : ($s->status == 'in_sorting_hub' ? 'fa-warehouse' : ($s->status == 'pending' ? 'fa-box-open' : 'fa-truck-fast')) }} mr-1"></i>
-                        {{ $s->status == 'pending' ? 'Penjemputan' : ($s->status == 'in_sorting_hub' ? 'In-Hub (Selesai)' : str_replace('_', ' ', $s->status)) }}
+                    <span class="px-3 py-1 rounded-full text-xs font-extrabold uppercase shrink-0 {{ $s->status == 'failed' ? 'bg-rose-100 text-rose-800 border border-rose-300' : ($isDone ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : ($s->status == 'pending' ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-amber-100 text-amber-800 border border-amber-200')) }}">
+                        <i class="fa-solid {{ $s->status == 'failed' ? 'fa-triangle-exclamation' : ($s->status == 'delivered' ? 'fa-circle-check' : ($s->status == 'in_sorting_hub' ? 'fa-warehouse' : ($s->status == 'pending' ? 'fa-box-open' : 'fa-truck-fast'))) }} mr-1"></i>
+                        {{ $s->status == 'failed' ? 'Pengiriman Gagal' : ($s->status == 'pending' ? 'Penjemputan' : ($s->status == 'in_sorting_hub' ? 'In-Hub (Selesai)' : str_replace('_', ' ', $s->status))) }}
                     </span>
                 </div>
 
@@ -320,7 +331,28 @@
 
                 <!-- ACTION BUTTONS FOR COURIER -->
                 <div class="pt-1 space-y-2">
-                    @if($s->status === 'in_sorting_hub')
+                    @if($s->status === 'failed')
+                        <div class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 text-xs space-y-1.5">
+                            <div class="flex items-center justify-between font-extrabold text-rose-800">
+                                <span class="flex items-center gap-1.5">
+                                    <i class="fa-solid fa-triangle-exclamation text-rose-600 text-sm"></i>
+                                    <span>Pengiriman Gagal (Hold / Retur ke Hub)</span>
+                                </span>
+                                <span class="text-[10px] bg-rose-200/80 px-2 py-0.5 rounded font-mono uppercase font-bold text-rose-900">
+                                    HOLD
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-700 font-medium">
+                                {{ $s->pod_notes ?: 'Alamat tidak ditemukan atau salah penerima.' }}
+                            </p>
+                            <div class="text-[10px] text-slate-500 pt-1.5 border-t border-rose-200/60 flex items-center justify-between">
+                                <span>Paket disimpan sementara untuk konfirmasi ulang alamat.</span>
+                                <button type="button" onclick="openFailDeliveryModal('{{ $s->id }}', '{{ $s->tracking_number }}', '{{ addslashes($s->recipient_name) }}', '{{ addslashes($s->recipient_address) }}')" class="text-rose-700 font-bold hover:underline">
+                                    <i class="fa-solid fa-pen-to-square mr-0.5"></i> Update Kendala
+                                </button>
+                            </div>
+                        </div>
+                    @elseif($s->status === 'in_sorting_hub')
                         <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-xs flex items-center justify-between">
                             <span class="flex items-center gap-1.5">
                                 <i class="fa-solid fa-circle-check text-emerald-600 text-sm"></i>
@@ -357,10 +389,16 @@
                             </button>
                         </form>
                     @else
-                        <a href="{{ route('epod.show', $s->tracking_number) }}" class="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-black text-xs md:text-sm flex items-center justify-center space-x-2 shadow-lg shadow-indigo-600/30 transition touch-btn">
-                            <i class="fa-solid fa-camera text-base"></i>
-                            <span>INPUT BUKTI TERIMA ePOD (FOTO & TTD)</span>
-                        </a>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <a href="{{ route('epod.show', $s->tracking_number) }}" class="w-full py-3 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-black text-xs md:text-sm flex items-center justify-center space-x-1.5 shadow-md shadow-indigo-600/30 transition touch-btn">
+                                <i class="fa-solid fa-camera text-base"></i>
+                                <span>BUKTI ePOD (TERIMA)</span>
+                            </a>
+                            <button type="button" onclick="openFailDeliveryModal('{{ $s->id }}', '{{ $s->tracking_number }}', '{{ addslashes($s->recipient_name) }}', '{{ addslashes($s->recipient_address) }}')" class="w-full py-3 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 active:scale-[0.98] text-rose-700 border border-rose-200 font-black text-xs md:text-sm flex items-center justify-center space-x-1.5 transition touch-btn">
+                                <i class="fa-solid fa-triangle-exclamation text-rose-600 text-base"></i>
+                                <span>LAPOR GAGAL KIRIM</span>
+                            </button>
+                        </div>
 
                         <form action="{{ route('shipments.complete-task', $s->id) }}" method="POST" onsubmit="return confirm('Selesaikan tugas pengantaran untuk resi {{ $s->tracking_number }}?')">
                             @csrf
@@ -426,6 +464,67 @@
     </div>
 </div>
 
+<!-- Modal Lapor Pengiriman Gagal (Alamat Tidak Ditemukan / Salah Penerima) -->
+<div id="reportFailedDeliveryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-rose-100 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base font-bold shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h3 class="font-black text-slate-900 text-sm">Lapor Pengiriman Gagal</h3>
+                    <p class="text-xs text-rose-600 font-mono font-bold mt-0.5" id="failModalTrackingNum"></p>
+                </div>
+            </div>
+            <button type="button" onclick="closeFailDeliveryModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Info Penerima & Alamat Tujuan -->
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+            <div class="text-slate-400 font-bold uppercase text-[10px]">Tujuan Pengiriman:</div>
+            <div class="font-extrabold text-slate-900" id="failModalRecipientName"></div>
+            <div class="text-slate-600 text-[11px] leading-relaxed" id="failModalRecipientAddress"></div>
+        </div>
+
+        <form id="failDeliveryForm" method="POST" enctype="multipart/form-data" class="space-y-4">
+            @csrf
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Alasan / Kendala Pengiriman *</label>
+                <select name="failure_reason" id="failReasonSelect" required onchange="onFailReasonChanged(this)" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-rose-500">
+                    <option value="Alamat Tidak Ditemukan / Tidak Jelas">📍 Alamat Tidak Ditemukan / Tidak Jelas</option>
+                    <option value="Salah Penerima / Penerima Tidak Dikenal di Lokasi">👤 Salah Penerima / Penerima Tidak Dikenal di Lokasi</option>
+                    <option value="Rumah / Kantor Tutup (Tidak Ada Orang)">🚪 Rumah / Kantor Tutup (Tidak Ada Orang)</option>
+                    <option value="Penerima Menolak Menerima Paket">🚫 Penerima Menolak Menerima Paket</option>
+                    <option value="Nomor Telepon Tidak Dapat Dihubungi">📞 Nomor Telepon Tidak Dapat Dihubungi</option>
+                    <option value="Lainnya">⚠️ Kendala Lainnya</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Catatan Detail Kendala *</label>
+                <textarea name="notes" id="failNotesInput" rows="3" required placeholder="Jelaskan detail kendala (contoh: Gang buntu, nomor rumah 14 tidak ada, tanya warga sekitar tidak kenal nama penerima)..." class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 focus:ring-2 focus:ring-rose-500"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Foto Bukti Kendala di Lapangan (Opsional)</label>
+                <input type="file" name="photo" accept="image/*" capture="environment" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100">
+                <p class="text-[10px] text-slate-400 mt-1">Foto nomor rumah sekitar, pagar tertutup, atau lokasi jalan.</p>
+            </div>
+
+            <div class="pt-2 flex justify-end space-x-2 border-t border-slate-100">
+                <button type="button" onclick="closeFailDeliveryModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">Batal</button>
+                <button type="submit" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs shadow-md shadow-rose-600/30 transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Simpan Status Gagal</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @push('scripts')
 <script>
     function filterStatus(filterType) {
@@ -441,17 +540,20 @@
         }
 
         document.querySelectorAll('.shipment-card').forEach(card => {
-            const cardType = card.dataset.type; // 'pickup', 'delivery', 'delivered'
+            const cardType = card.dataset.type; // 'pickup', 'delivery', 'delivered', 'failed'
             const isDone = card.dataset.isDone === 'true';
+            const isFailed = card.dataset.isFailed === 'true';
 
             if (filterType === 'all') {
                 card.style.display = 'block';
             } else if (filterType === 'pickup') {
-                card.style.display = (cardType === 'pickup' && !isDone) ? 'block' : 'none';
+                card.style.display = (cardType === 'pickup' && !isDone && !isFailed) ? 'block' : 'none';
             } else if (filterType === 'delivery') {
-                card.style.display = (cardType === 'delivery' && !isDone) ? 'block' : 'none';
+                card.style.display = (cardType === 'delivery' && !isDone && !isFailed) ? 'block' : 'none';
             } else if (filterType === 'delivered') {
                 card.style.display = isDone ? 'block' : 'none';
+            } else if (filterType === 'failed') {
+                card.style.display = isFailed ? 'block' : 'none';
             } else {
                 card.style.display = 'none';
             }
@@ -477,6 +579,46 @@
 
     function closeUpdateStatusModal() {
         document.getElementById('updateCourierStatusModal').classList.add('hidden');
+    }
+
+    function openFailDeliveryModal(shipmentId, trackingNum, recipientName, recipientAddress) {
+        const modal = document.getElementById('reportFailedDeliveryModal');
+        const form = document.getElementById('failDeliveryForm');
+        const trackingElem = document.getElementById('failModalTrackingNum');
+        const nameElem = document.getElementById('failModalRecipientName');
+        const addressElem = document.getElementById('failModalRecipientAddress');
+        const notesInput = document.getElementById('failNotesInput');
+        const reasonSelect = document.getElementById('failReasonSelect');
+
+        form.action = '/shipments/' + shipmentId + '/failed';
+        trackingElem.textContent = 'RESI: ' + trackingNum;
+        nameElem.textContent = recipientName || '-';
+        addressElem.textContent = recipientAddress || '-';
+        reasonSelect.selectedIndex = 0;
+        notesInput.value = 'Kurir telah tiba di area namun nomor rumah/gang pada alamat yang tertera tidak ditemukan.';
+
+        modal.classList.remove('hidden');
+    }
+
+    function closeFailDeliveryModal() {
+        document.getElementById('reportFailedDeliveryModal').classList.add('hidden');
+    }
+
+    function onFailReasonChanged(selectEl) {
+        const notesInput = document.getElementById('failNotesInput');
+        if (selectEl.value === 'Alamat Tidak Ditemukan / Tidak Jelas') {
+            notesInput.value = 'Kurir telah tiba di area namun nomor rumah/gang pada alamat yang tertera tidak ditemukan.';
+        } else if (selectEl.value === 'Salah Penerima / Penerima Tidak Dikenal di Lokasi') {
+            notesInput.value = 'Warga atau penghuni di lokasi menyatakan tidak mengenal nama penerima tersebut.';
+        } else if (selectEl.value === 'Rumah / Kantor Tutup (Tidak Ada Orang)') {
+            notesInput.value = 'Rumah/kantor penerima dalam kondisi terkunci dan tidak ada orang/penghuni di tempat.';
+        } else if (selectEl.value === 'Penerima Menolak Menerima Paket') {
+            notesInput.value = 'Penerima menolak untuk menerima paket saat hendak diserahkan.';
+        } else if (selectEl.value === 'Nomor Telepon Tidak Dapat Dihubungi') {
+            notesInput.value = 'Kurir telah mencoba menghubungi nomor telepon penerima berulang kali namun tidak aktif / tidak diangkat.';
+        } else {
+            notesInput.value = '';
+        }
     }
 </script>
 @endpush

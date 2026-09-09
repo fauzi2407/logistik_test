@@ -74,4 +74,19 @@ class User extends Authenticatable
 
         return false;
     }
+
+    public function appNotifications()
+    {
+        return $this->hasMany(AppNotification::class)->latest();
+    }
+
+    public function unreadNotifications()
+    {
+        return $this->hasMany(AppNotification::class)->whereNull('read_at')->latest();
+    }
+
+    public function unreadNotificationsCount(): int
+    {
+        return $this->hasMany(AppNotification::class)->whereNull('read_at')->count();
+    }
 }

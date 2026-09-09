@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppNotification;
 use App\Models\BranchHub;
 use App\Models\Courier;
 use App\Models\CourierAssignment;
@@ -30,25 +31,70 @@ class ShipmentController extends Controller
     {
         $search = $request->input('search');
         $status = $request->input('status');
+        $serviceType = $request->input('service_type');
+        $courierId = $request->input('courier_id');
         $loggedInCustomer = $this->getLoggedInCustomer();
+        $loggedInCourier = Auth::user() && Auth::user()->role === 'courier'
+            ? Courier::where('user_id', Auth::id())->orWhere('name', Auth::user()->name)->first()
+            : null;
 
-        $shipments = Shipment::with(['customer', 'courier', 'originHub', 'destinationHub', 'latestLog'])
+        $query = Shipment::with(['customer', 'courier', 'originHub', 'destinationHub', 'latestLog'])
             ->when($loggedInCustomer, function ($q) use ($loggedInCustomer) {
                 $q->where('customer_id', $loggedInCustomer->id);
             })
+            ->when($loggedInCourier, function ($q) use ($loggedInCourier) {
+                $q->where('courier_id', $loggedInCourier->id);
+            })
             ->when($search, function ($q, $search) {
-                $q->where('tracking_number', 'like', "%{$search}%")
-                    ->orWhere('sender_name', 'like', "%{$search}%")
-                    ->orWhere('recipient_name', 'like', "%{$search}%")
-                    ->orWhere('recipient_city', 'like', "%{$search}%");
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('tracking_number', 'like', "%{$search}%")
+                        ->orWhere('sender_name', 'like', "%{$search}%")
+                        ->orWhere('recipient_name', 'like', "%{$search}%")
+                        ->orWhere('recipient_city', 'like', "%{$search}%");
+                });
             })
             ->when($status, function ($q, $status) {
                 $q->where('status', $status);
             })
-            ->latest()
-            ->paginate(10);
+            ->when($serviceType, function ($q, $serviceType) {
+                $q->where('service_type', $serviceType);
+            })
+            ->when($courierId, function ($q, $courierId) {
+                $q->where('courier_id', $courierId);
+            });
 
-        return view('shipments.index', compact('shipments', 'search', 'status'));
+        // Quick KPI Stats scoped to role
+        $baseStatsQuery = Shipment::query()
+            ->when($loggedInCustomer, fn($q) => $q->where('customer_id', $loggedInCustomer->id))
+            ->when($loggedInCourier, fn($q) => $q->where('courier_id', $loggedInCourier->id));
+
+        $statTotal = (clone $baseStatsQuery)->count();
+        $statInTransit = (clone $baseStatsQuery)->whereIn('status', ['picked_up', 'in_sorting_hub', 'in_transit', 'out_for_delivery'])->count();
+        $statDelivered = (clone $baseStatsQuery)->where('status', 'delivered')->count();
+        $statPending = (clone $baseStatsQuery)->where('status', 'pending')->count();
+
+        $shipments = $query->latest()->paginate(15)->withQueryString();
+
+        $couriers = Courier::orderBy('name')->get();
+        $availableServiceTypes = ['Regular', 'Express', 'SameDay'];
+        $dbServiceTypes = Shipment::distinct()->whereNotNull('service_type')->pluck('service_type')->toArray();
+        $serviceTypes = array_values(array_unique(array_filter(array_merge($availableServiceTypes, $dbServiceTypes))));
+
+        return view('shipments.index', compact(
+            'shipments',
+            'search',
+            'status',
+            'serviceType',
+            'courierId',
+            'couriers',
+            'serviceTypes',
+            'statTotal',
+            'statInTransit',
+            'statDelivered',
+            'statPending',
+            'loggedInCustomer',
+            'loggedInCourier'
+        ));
     }
 
     public function create(Request $request)
@@ -276,25 +322,129 @@ class ShipmentController extends Controller
 
         $validated = $request->validate([
             'status' => 'required|string',
-            'location' => 'required|string|max:255',
+            'hub_id' => 'nullable|exists:branch_hubs,id',
+            'location' => 'nullable|string|max:255',
             'description' => 'required|string',
         ]);
 
-        $shipment->update(['status' => $validated['status']]);
+        $hubId = $validated['hub_id'] ?? null;
+        $location = $validated['location'] ?? null;
+
+        if ($hubId) {
+            $hub = BranchHub::find($hubId);
+            if ($hub) {
+                $location = $hub->name . ' (' . $hub->city . ')';
+            }
+        } elseif (!$location) {
+            $location = $shipment->currentHub ? $shipment->currentHub->name : ($shipment->originHub ? $shipment->originHub->name : $shipment->recipient_city);
+        }
+
+        $updateData = [
+            'status' => $validated['status'],
+        ];
+        if ($hubId) {
+            $updateData['current_hub_id'] = $hubId;
+        }
+
+        $shipment->update($updateData);
 
         ShipmentTrackingLog::create([
             'shipment_id' => $shipment->id,
             'status' => $validated['status'],
-            'location' => $validated['location'],
+            'location' => $location,
             'description' => $validated['description'],
             'updated_by_user_id' => Auth::id(),
         ]);
 
         if (in_array($validated['status'], ['delivered', 'in_sorting_hub'])) {
             CourierAssignment::markShipmentTaskCompleted($shipment->id);
+        } elseif ($validated['status'] === 'failed') {
+            CourierAssignment::markShipmentTaskFailed($shipment->id, $validated['description']);
+        }
+
+        // Send notification to customer if package is marked delivered or failed
+        if ($validated['status'] === 'delivered' && $shipment->customer_id) {
+            AppNotification::sendToCustomer($shipment->customer_id, [
+                'type' => 'shipment',
+                'title' => 'Paket Berhasil Diterima (DELIVERED)',
+                'message' => "Paket Resi {$shipment->tracking_number} telah selesai diantar (DELIVERED). Lokasi: {$location}.",
+                'icon' => 'fa-circle-check',
+                'color' => 'emerald',
+                'url' => route('shipments.show', $shipment->id),
+                'data' => ['shipment_id' => $shipment->id, 'tracking_number' => $shipment->tracking_number],
+            ]);
+        } elseif ($validated['status'] === 'failed' && $shipment->customer_id) {
+            AppNotification::sendToCustomer($shipment->customer_id, [
+                'type' => 'shipment',
+                'title' => 'Pengiriman Paket Mengalami Kendala (GAGAL / HOLD)',
+                'message' => "Pengiriman paket resi {$shipment->tracking_number} belum berhasil diantar. Keterangan: {$validated['description']}.",
+                'icon' => 'fa-triangle-exclamation',
+                'color' => 'rose',
+                'url' => route('shipments.show', $shipment->id),
+                'data' => ['shipment_id' => $shipment->id, 'tracking_number' => $shipment->tracking_number, 'status' => 'failed'],
+            ]);
         }
 
         return redirect()->back()->with('success', 'Status posisi pengiriman resi berhasil diperbarui.');
+    }
+
+    public function reportFailedDelivery(Request $request, $id)
+    {
+        $shipment = Shipment::findOrFail($id);
+
+        $validated = $request->validate([
+            'failure_reason' => 'required|string|max:255',
+            'notes' => 'nullable|string',
+            'photo' => 'nullable|image|max:5120',
+            'location' => 'nullable|string|max:255',
+        ]);
+
+        $reason = $validated['failure_reason'];
+        $notes = !empty($validated['notes']) ? " - " . $validated['notes'] : "";
+        $user = Auth::user();
+        $courierName = $user ? $user->name : 'Kurir';
+        $description = "Pengiriman Gagal oleh {$courierName}: {$reason}{$notes}";
+
+        $photoPath = null;
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('pod_photos', 'public');
+        }
+
+        $location = $validated['location'] ?: ($shipment->recipient_address . ', ' . $shipment->recipient_city);
+
+        $updateData = [
+            'status' => 'failed',
+            'pod_notes' => "Kendala Pengantaran: {$reason}{$notes}",
+        ];
+        if ($photoPath) {
+            $updateData['pod_photo'] = $photoPath;
+        }
+
+        $shipment->update($updateData);
+
+        ShipmentTrackingLog::create([
+            'shipment_id' => $shipment->id,
+            'status' => 'failed',
+            'location' => $location,
+            'description' => $description,
+            'updated_by_user_id' => Auth::id(),
+        ]);
+
+        CourierAssignment::markShipmentTaskFailed($shipment->id, $description);
+
+        if ($shipment->customer_id) {
+            AppNotification::sendToCustomer($shipment->customer_id, [
+                'type' => 'shipment',
+                'title' => 'Pengiriman Mengalami Kendala: ' . $reason,
+                'message' => "Paket Resi {$shipment->tracking_number} gagal diantar oleh Kurir. Kendala: {$reason}. Silakan hubungi customer service kami.",
+                'icon' => 'fa-triangle-exclamation',
+                'color' => 'rose',
+                'url' => route('shipments.show', $shipment->id),
+                'data' => ['shipment_id' => $shipment->id, 'tracking_number' => $shipment->tracking_number, 'status' => 'failed'],
+            ]);
+        }
+
+        return redirect()->back()->with('success', "Laporan kendala pengiriman resi {$shipment->tracking_number} berhasil disimpan (Status: Gagal / Hold).");
     }
 
     public function completeTask(Request $request, $id)

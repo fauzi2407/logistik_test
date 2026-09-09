@@ -11,9 +11,7 @@
                 <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-indigo-100 text-indigo-800">
                     Delivery Order (DO) Multi-Tujuan
                 </span>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-800">
-                    {{ $deliveryOrder->status }}
-                </span>
+                {!! $deliveryOrder->status_badge !!}
             </div>
             <h2 class="text-2xl font-black text-slate-900 tracking-tight font-mono mt-1">{{ $deliveryOrder->do_number }}</h2>
             <div class="text-xs text-slate-500 mt-0.5">Tanggal Order: <span class="font-bold text-slate-800">{{ $deliveryOrder->order_date->format('d M Y') }}</span></div>
@@ -107,13 +105,34 @@
             <div class="bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/60">
                 <span class="text-slate-400 block">Status Pembayaran Tagihan:</span>
                 @if($deliveryOrder->invoice && $deliveryOrder->invoice->status === 'paid')
-                    <span class="inline-block mt-0.5 px-2.5 py-0.5 rounded text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        LUNAS (PAID)
+                    <span class="inline-flex items-center mt-0.5 px-2.5 py-0.5 rounded text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        <i class="fa-solid fa-circle-check mr-1.5"></i> LUNAS (PAID) — DO KOMPLIT
                     </span>
+                    <div class="mt-1">
+                        <a href="{{ route('invoices.show', $deliveryOrder->invoice->id) }}" class="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 underline">
+                            <i class="fa-solid fa-file-invoice mr-1"></i> {{ $deliveryOrder->invoice->invoice_number }}
+                        </a>
+                    </div>
+                @elseif($deliveryOrder->invoice)
+                    <span class="inline-flex items-center mt-0.5 px-2.5 py-0.5 rounded text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        <i class="fa-solid fa-clock mr-1.5"></i> BELUM LUNAS (PENDING)
+                    </span>
+                    <div class="mt-1">
+                        <a href="{{ route('invoices.show', $deliveryOrder->invoice->id) }}" class="text-[11px] font-bold text-amber-300 hover:underline">
+                            <i class="fa-solid fa-file-invoice mr-1"></i> Lihat Invoice ({{ $deliveryOrder->invoice->invoice_number }})
+                        </a>
+                    </div>
                 @else
-                    <span class="inline-block mt-0.5 px-2.5 py-0.5 rounded text-[11px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        BELUM LUNAS (PENDING)
+                    <span class="inline-flex items-center mt-0.5 px-2.5 py-0.5 rounded text-[11px] font-extrabold bg-slate-500/20 text-slate-300 border border-slate-500/30">
+                        <i class="fa-solid fa-circle-minus mr-1.5"></i> BELUM DITAGIHKAN
                     </span>
+                    @if(Auth::user()->role !== 'customer' && !$deliveryOrder->isCompleted())
+                        <div class="mt-1.5">
+                            <a href="{{ route('invoices.create', ['do_id' => $deliveryOrder->id, 'customer_id' => $deliveryOrder->customer_id]) }}" class="inline-flex items-center px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-[10px] font-bold text-white shadow transition">
+                                <i class="fa-solid fa-file-invoice-dollar mr-1"></i> Terbitkan Invoice
+                            </a>
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>

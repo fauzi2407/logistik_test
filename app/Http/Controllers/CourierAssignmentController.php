@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppNotification;
 use App\Models\BranchHub;
 use App\Models\Courier;
 use App\Models\CourierAssignment;
@@ -148,6 +149,25 @@ class CourierAssignmentController extends Controller
                 ]);
             }
         }
+
+        $typeNames = [
+            'pickup' => 'Penjemputan (Pickup)',
+            'delivery' => 'Pengantaran (Delivery)',
+            'transfer' => 'Transfer Antar Hub (Linehaul)',
+        ];
+        $typeName = $typeNames[$validated['assignment_type']] ?? $validated['assignment_type'];
+        $itemCount = count($validated['shipment_ids']);
+
+        // Notify Courier (and Admin receives copy)
+        AppNotification::sendToCourier($courier, [
+            'type' => 'assignment',
+            'title' => "Tugas Baru: {$typeName}",
+            'message' => "Manifes {$asnNumber} ditugaskan kepada Anda dengan {$itemCount} resi/paket.",
+            'icon' => 'fa-clipboard-list',
+            'color' => 'indigo',
+            'url' => route('courier-assignments.show', $assignment->id),
+            'data' => ['assignment_id' => $assignment->id, 'assignment_number' => $asnNumber],
+        ]);
 
         return redirect()->route('courier-assignments.index')->with('success', 'Penugasan Kurir berhasil dibuat! Nomor Manifes: ' . $asnNumber);
     }
@@ -339,6 +359,18 @@ class CourierAssignmentController extends Controller
                 Vehicle::where('id', $assignment->vehicle_id)->update(['status' => 'active']);
             }
         }
+
+        // Notify Staff (and Admin receives copy)
+        $courierName = $assignment->courier ? $assignment->courier->name : 'Kurir';
+        AppNotification::sendToStaff([
+            'type' => 'assignment',
+            'title' => 'Manifes Penugasan Selesai',
+            'message' => "Manifes {$assignment->assignment_number} telah diselesaikan oleh kurir {$courierName}.",
+            'icon' => 'fa-circle-check',
+            'color' => 'emerald',
+            'url' => route('courier-assignments.show', $assignment->id),
+            'data' => ['assignment_id' => $assignment->id, 'assignment_number' => $assignment->assignment_number],
+        ]);
     }
 
     public function destroy($id)

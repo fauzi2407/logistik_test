@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppNotification;
 use App\Models\BranchHub;
 use App\Models\Customer;
 use App\Models\DeliveryOrder;
@@ -42,7 +43,11 @@ class DeliveryOrderController extends Controller
                     });
             })
             ->when($status, function ($q, $status) {
-                $q->where('status', $status);
+                if ($status === 'completed' || $status === 'komplit') {
+                    $q->whereIn('status', ['completed', 'komplit']);
+                } else {
+                    $q->where('status', $status);
+                }
             })
             ->latest()
             ->paginate(10);
@@ -216,6 +221,29 @@ class DeliveryOrderController extends Controller
             ]);
         }
 
+        // Notification Dispatch
+        if ($isCustomer) {
+            AppNotification::sendToStaff([
+                'type' => 'delivery_order',
+                'title' => 'Delivery Order Baru dari Customer',
+                'message' => "Customer {$customer->name} membuat DO baru ({$doNumber}) dengan " . count($validated['items']) . " item tujuan. Menunggu verifikasi.",
+                'icon' => 'fa-file-contract',
+                'color' => 'indigo',
+                'url' => route('delivery-orders.show', $do->id),
+                'data' => ['do_id' => $do->id, 'customer_id' => $customer->id],
+            ]);
+        } else {
+            AppNotification::sendToCustomer($customer, [
+                'type' => 'delivery_order',
+                'title' => 'Surat Jalan / DO Diterbitkan',
+                'message' => "Surat Jalan / DO {$doNumber} dengan " . count($validated['items']) . " item tujuan telah diterbitkan oleh Admin.",
+                'icon' => 'fa-file-contract',
+                'color' => 'emerald',
+                'url' => route('delivery-orders.show', $do->id),
+                'data' => ['do_id' => $do->id],
+            ]);
+        }
+
         $message = $isCustomer
             ? 'Delivery Order (DO) berhasil dibuat dan menunggu verifikasi admin untuk penerbitan resi AWB.'
             : 'DO Multi-Tujuan & Resi AWB berhasil dibuat.';
@@ -281,7 +309,7 @@ class DeliveryOrderController extends Controller
             'pickup_postal_code' => 'nullable|string|max:20',
             'pickup_address' => 'nullable|string',
             'service_type' => 'nullable|string|max:50',
-            'status' => 'required|in:draft,pending,approved,processing,shipped,delivered,cancelled',
+            'status' => 'required|in:draft,pending,approved,processing,shipped,delivered,completed,komplit,cancelled',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.recipient_name' => 'required|string|max:255',
@@ -581,6 +609,18 @@ class DeliveryOrderController extends Controller
         }
 
         $do->update(['status' => 'approved']);
+
+        if ($createdCount > 0) {
+            AppNotification::sendToCustomer($customer, [
+                'type' => 'delivery_order',
+                'title' => 'Resi AWB Diterbitkan',
+                'message' => "Sebanyak {$createdCount} resi AWB pengiriman telah diterbitkan untuk Surat Jalan {$do->do_number}.",
+                'icon' => 'fa-box',
+                'color' => 'emerald',
+                'url' => route('delivery-orders.show', $do->id),
+                'data' => ['do_id' => $do->id, 'do_number' => $do->do_number],
+            ]);
+        }
 
         $msg = $createdCount > 0 
             ? "Berhasil menerbitkan {$createdCount} Resi AWB otomatis untuk DO {$do->do_number}!" 

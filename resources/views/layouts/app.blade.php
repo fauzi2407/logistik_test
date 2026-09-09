@@ -89,6 +89,17 @@
                     <span>Pengajuan Kasbon</span>
                 </a>
 
+                <a href="{{ route('notifications.index') }}" class="flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-xs transition {{ request()->routeIs('notifications.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-bell text-base"></i>
+                        <span>Notifikasi</span>
+                    </div>
+                    @php $courierUnread = Auth::user()->unreadNotificationsCount(); @endphp
+                    @if($courierUnread > 0)
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">{{ $courierUnread > 99 ? '99+' : $courierUnread }}</span>
+                    @endif
+                </a>
+
                 <div class="pt-4">
                     <a href="{{ route('tracking.index') }}" target="_blank" class="flex items-center space-x-3 px-3.5 py-3 rounded-xl font-bold text-xs text-indigo-400 bg-indigo-950/50 hover:bg-indigo-900/50 border border-indigo-800/40 transition">
                         <i class="fa-solid fa-magnifying-glass-location text-base"></i>
@@ -113,6 +124,17 @@
                     <span>Resi Pengiriman Saya</span>
                 </a>
 
+                <a href="{{ route('notifications.index') }}" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('notifications.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-bell text-sm"></i>
+                        <span>Notifikasi</span>
+                    </div>
+                    @php $customerUnread = Auth::user()->unreadNotificationsCount(); @endphp
+                    @if($customerUnread > 0)
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">{{ $customerUnread > 99 ? '99+' : $customerUnread }}</span>
+                    @endif
+                </a>
+
                 <div class="pt-4">
                     <a href="{{ route('tracking.index') }}" target="_blank" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs text-indigo-400 bg-indigo-950/50 hover:bg-indigo-900/50 border border-indigo-800/40 transition">
                         <i class="fa-solid fa-magnifying-glass-location text-sm"></i>
@@ -125,6 +147,17 @@
                 <a href="{{ route('dashboard') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('dashboard') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fa-solid fa-chart-line text-sm"></i>
                     <span>Dashboard Analytics</span>
+                </a>
+
+                <a href="{{ route('notifications.index') }}" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('notifications.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-bell text-sm"></i>
+                        <span>Pusat Notifikasi</span>
+                    </div>
+                    @php $staffUnread = Auth::user()->unreadNotificationsCount(); @endphp
+                    @if($staffUnread > 0)
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">{{ $staffUnread > 99 ? '99+' : $staffUnread }}</span>
+                    @endif
                 </a>
 
                 @if(Auth::user()->hasPermission('reports.index', 'view'))
@@ -363,6 +396,76 @@
             </div>
 
             <div class="flex items-center space-x-2">
+                <!-- Notification Bell & Dropdown -->
+                <div class="relative" id="notifDropdownWrapper">
+                    @php
+                        $headerUnreadCount = Auth::user()->unreadNotificationsCount();
+                        $headerNotifications = Auth::user()->appNotifications()->latest()->take(5)->get();
+                    @endphp
+                    <button type="button" id="notifDropdownBtn" onclick="toggleNotificationDropdown()" class="relative p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition focus:outline-none touch-btn" title="Notifikasi">
+                        <i class="fa-solid fa-bell text-sm"></i>
+                        @if($headerUnreadCount > 0)
+                            <span id="notifBadge" class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center animate-pulse shadow-sm">
+                                {{ $headerUnreadCount > 99 ? '99+' : $headerUnreadCount }}
+                            </span>
+                        @endif
+                    </button>
+
+                    <!-- Dropdown Panel -->
+                    <div id="notifDropdownMenu" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden transform transition-all">
+                        <div class="p-3.5 bg-slate-900 text-white flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-bell text-sm text-indigo-400"></i>
+                                <span class="text-xs font-bold uppercase tracking-wider">Notifikasi</span>
+                                @if($headerUnreadCount > 0)
+                                    <span id="headerUnreadBadge" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">{{ $headerUnreadCount }} baru</span>
+                                @endif
+                            </div>
+                            @if($headerUnreadCount > 0)
+                                <form action="{{ route('notifications.mark-all-read') }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-[10px] font-semibold text-slate-300 hover:text-white underline">Tandai Dibaca</button>
+                                </form>
+                            @endif
+                        </div>
+
+                        <div class="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                            @forelse($headerNotifications as $notif)
+                                <form action="{{ route('notifications.read', $notif->id) }}" method="POST" class="m-0 p-0">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left p-3 hover:bg-slate-50 transition flex items-start space-x-3 {{ !$notif->read_at ? 'bg-indigo-50/40' : '' }}">
+                                        <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 text-xs mt-0.5">
+                                            <i class="fa-solid {{ $notif->icon ?? 'fa-bell' }}"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex items-center justify-between mb-0.5">
+                                                <p class="text-xs font-bold text-slate-800 truncate {{ !$notif->read_at ? 'font-black' : '' }}">{{ $notif->title }}</p>
+                                                @if(!$notif->read_at)
+                                                    <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0 ml-1"></span>
+                                                @endif
+                                            </div>
+                                            <p class="text-[11px] text-slate-600 line-clamp-2 leading-tight">{{ $notif->message }}</p>
+                                            <span class="text-[10px] text-slate-400 font-medium mt-1 block">{{ $notif->created_at->diffForHumans() }}</span>
+                                        </div>
+                                    </button>
+                                </form>
+                            @empty
+                                <div class="p-6 text-center text-slate-400">
+                                    <i class="fa-regular fa-bell-slash text-2xl mb-2 text-slate-300"></i>
+                                    <p class="text-xs font-semibold">Belum ada notifikasi</p>
+                                </div>
+                            @endforelse
+                        </div>
+
+                        <div class="p-2.5 bg-slate-50 border-t border-slate-100 text-center">
+                            <a href="{{ route('notifications.index') }}" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 inline-flex items-center space-x-1">
+                                <span>Lihat Semua Notifikasi</span>
+                                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 @if(Auth::user()->role !== 'courier')
                     <a href="{{ route('settings.index') }}" class="p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition text-xs font-bold hidden sm:inline-flex items-center">
                         <i class="fa-solid fa-sliders mr-1"></i> Pengaturan
@@ -405,6 +508,21 @@
                 backdrop.classList.add('hidden');
             }
         }
+
+        function toggleNotificationDropdown() {
+            const menu = document.getElementById('notifDropdownMenu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const wrapper = document.getElementById('notifDropdownWrapper');
+            const menu = document.getElementById('notifDropdownMenu');
+            if (wrapper && menu && !wrapper.contains(event.target)) {
+                menu.classList.add('hidden');
+            }
+        });
     </script>
     @stack('scripts')
 </body>

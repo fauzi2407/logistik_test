@@ -38,6 +38,12 @@
             <div>
                 <div class="text-xs text-indigo-300 font-bold uppercase tracking-wider">Status Posisi Terakhir Paket</div>
                 <div class="text-lg font-black uppercase text-white">{{ str_replace('_', ' ', $shipment->status) }}</div>
+                @if($shipment->currentHub)
+                    <div class="text-xs text-indigo-200 mt-0.5 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-warehouse text-[10px] text-amber-300"></i>
+                        <span>Posisi Saat Ini: <strong class="text-white">{{ $shipment->currentHub->name }}</strong> ({{ $shipment->currentHub->city }})</span>
+                    </div>
+                @endif
             </div>
         </div>
         <div class="text-right text-xs">
@@ -138,8 +144,18 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Posisi Lokasi *</label>
-                <input type="text" name="location" value="{{ $shipment->currentHub ? $shipment->currentHub->name : $shipment->recipient_city }}" required placeholder="Contoh: Hub Jakarta / Tol Cipularang / Bandung" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    <i class="fa-solid fa-warehouse text-indigo-600 mr-1"></i> Pilihan Lokasi Hub Transit *
+                </label>
+                <select name="hub_id" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none">
+                    <option value="">-- Pilih Hub Transit --</option>
+                    @foreach($hubs as $h)
+                        <option value="{{ $h->id }}" {{ ($shipment->current_hub_id == $h->id || (!$shipment->current_hub_id && $shipment->origin_hub_id == $h->id)) ? 'selected' : '' }}>
+                            {{ $h->name }} ({{ $h->code }} - {{ $h->city }})
+                        </option>
+                    @endforeach
+                </select>
+                <p class="text-[11px] text-slate-400 mt-1">Pilih cabang / gudang transit di mana paket saat ini berada.</p>
             </div>
 
             <div>
