@@ -50,6 +50,13 @@ class LogisticsSeeder extends Seeder
             'phone' => '0215554321',
         ]);
 
+        $customerAstraUser = User::updateOrCreate(['email' => 'customer@astrafinance.com'], [
+            'name' => 'PT ASTRA SEDAYA FINANCE (KEBON JERUK) - JBA',
+            'password' => Hash::make('password'),
+            'role' => 'customer',
+            'phone' => '02158300000',
+        ]);
+
         // 2. Hubs
         $hubJkt = BranchHub::updateOrCreate(['name' => 'Hub Utama Jakarta Selatan'], [
             'code' => 'HUB-JKT01',
@@ -140,6 +147,17 @@ class LogisticsSeeder extends Seeder
             'city' => 'Jakarta Selatan',
             'address' => 'Indofood Tower Lt. 23, Jl. Jend. Sudirman Kav. 76',
             'postal_code' => '12910',
+        ]);
+
+        $custAstraFinance = Customer::updateOrCreate(['customer_code' => 'CSTJBA0208FSM'], [
+            'name' => 'PT ASTRA SEDAYA FINANCE (KEBON JERUK) - JBA',
+            'company_name' => 'PT Astra Sedaya Finance',
+            'customer_type' => 'corporate',
+            'phone' => '02158300000',
+            'email' => 'customer@astrafinance.com',
+            'city' => 'Jakarta Barat',
+            'address' => 'RUKAN KENCANA NIAGA 1 BLOK D 1 NO 3 M & 3N, TAMAN ARIES, MERUYA UTARA, KEMBANGAN, JAKARTA BARAT',
+            'postal_code' => '11810',
         ]);
 
         // 6. Tariffs

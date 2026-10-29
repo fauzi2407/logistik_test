@@ -30,8 +30,10 @@
     <div class="label-card">
         <!-- Header -->
         <div class="brand-header">
-            <div class="brand-title">RADJA EXPRESS</div>
-            <div class="service-badge">{{ strtoupper($shipment->service_type) }}</div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <img src="{{ asset('images/awx-logo-horizontal.svg') }}" alt="AWX" style="height: 32px; object-contain;">
+            </div>
+            <div class="service-badge" style="background: #f58220; color: #fff;">{{ strtoupper($shipment->service_type) }}</div>
         </div>
 
         <!-- Tracking Number & Barcode representation -->

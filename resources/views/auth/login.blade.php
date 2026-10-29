@@ -1,131 +1,135 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full bg-slate-900">
+<html lang="id" class="h-full bg-white">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @php
-        $appName = \App\Models\AppSetting::get('app_name', 'Radja Express Logistics');
-        $appTagline = \App\Models\AppSetting::get('app_tagline', 'Logistics & Supply Chain Management System');
-        $appLogoIcon = \App\Models\AppSetting::get('app_logo_icon', 'fa-truck-fast');
-        $appLogoUrl = \App\Models\AppSetting::get('app_logo_url', null);
-        $appTheme = \App\Models\AppSetting::get('app_theme', 'indigo');
-
-        $themeBtn = [
-            'indigo' => 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/30 text-indigo-600',
-            'emerald' => 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30 text-emerald-600',
-            'amber' => 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/30 text-amber-600',
-            'rose' => 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/30 text-rose-600',
-            'slate' => 'bg-slate-800 hover:bg-slate-900 shadow-slate-800/30 text-slate-800',
-        ];
-        $themeHex = ['indigo' => '%234f46e5', 'emerald' => '%23059669', 'amber' => '%23d97706', 'rose' => '%23e11d48', 'slate' => '%231e293b'];
-        $hex = $themeHex[$appTheme] ?? '%234f46e5';
-        $btnStyle = $themeBtn[$appTheme] ?? $themeBtn['indigo'];
+        $appName = \App\Models\AppSetting::get('app_name', 'ANTARAN WARGA EKSPRESS');
+        $appTagline = \App\Models\AppSetting::get('app_tagline', 'CEPAT • AMAN • TERPERCAYA');
+        $appLogoUrl = \App\Models\AppSetting::get('app_logo_url', 'images/awx-logo.svg');
     @endphp
 
-    <title>Login - {{ $appName }}</title>
+    <title>Login TMS - {{ $appName }}</title>
     
-    <!-- Favicon (Samakan Logo Aplikasi & Tab Bar Browser) -->
-    @if($appLogoUrl)
-        <link rel="icon" type="image/png" href="{{ asset($appLogoUrl) }}">
-        <link rel="shortcut icon" href="{{ asset($appLogoUrl) }}">
-        <link rel="apple-touch-icon" href="{{ asset($appLogoUrl) }}">
-    @else
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2225%22 fill=%22{{ $hex }}%22/><text y=%22.85em%22 x=%2250%25%22 text-anchor=%22middle%22 font-size=%2255%22>🚚</text></svg>">
-    @endif
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/awx-logo-horizontal.svg') }}">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .tms-bg {
+            background: linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #f97316 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .tms-diagonal {
+            clip-path: polygon(12% 0, 100% 0, 100% 100%, 0% 100%);
+        }
+        .login-btn-orange {
+            background-color: #f58220;
+            transition: all 0.2s ease-in-out;
+        }
+        .login-btn-orange:hover {
+            background-color: #e06c0c;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px -4px rgba(245, 130, 32, 0.4);
+        }
+    </style>
 </head>
-<body class="h-full flex items-center justify-center p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
-    <div class="w-full max-w-md bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/20">
-        <!-- Logo Header -->
-        <div class="text-center mb-8">
-            @if($appLogoUrl)
-                <img src="{{ asset($appLogoUrl) }}" alt="Logo" class="h-16 mx-auto object-contain mb-4">
-            @else
-                <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-400 mx-auto flex items-center justify-center shadow-xl shadow-indigo-500/30 mb-4 text-white">
-                    <i class="fa-solid {{ $appLogoIcon }} text-2xl"></i>
+<body class="h-full flex flex-col justify-between bg-slate-50 text-slate-800 antialiased">
+
+    <div class="min-h-full flex flex-1">
+        <!-- Left Side: Login Form (Matching PDF Page 12) -->
+        <div class="flex-1 flex flex-col justify-center py-10 px-6 sm:px-10 lg:px-16 xl:px-24 bg-white z-10">
+            <div class="mx-auto w-full max-w-sm">
+                
+                <!-- AWX Brand Logo -->
+                <div class="text-center mb-8">
+                    <a href="{{ route('home') }}" class="inline-block group transition transform hover:scale-[1.02]">
+                        <img src="{{ asset('images/awx-logo.svg') }}" alt="AWX Antaran Warga Ekspress" class="h-24 mx-auto object-contain">
+                    </a>
+                    <p class="text-xs text-slate-400 mt-2 font-medium tracking-wide">Login with your account</p>
                 </div>
-            @endif
-            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">{{ $appName }}</h2>
-            <p class="text-xs text-slate-500 mt-1 font-medium">{{ $appTagline }}</p>
+
+                @if($errors->any())
+                    <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold text-center">
+                        {{ $errors->first() }}
+                    </div>
+                @endif
+
+                @if(session('success'))
+                    <div class="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold text-center">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
+                <form action="{{ route('login.post') }}" method="POST" class="space-y-4">
+                    @csrf
+                    <div>
+                        <div class="relative">
+                            <input type="text" id="emailInput" name="email" value="{{ old('email') }}" required placeholder="Username / Email"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none transition bg-slate-50/50">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="relative">
+                            <input type="password" id="passwordInput" name="password" required placeholder="Password"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 text-sm font-medium text-slate-800 placeholder-slate-400 outline-none transition bg-slate-50/50">
+                        </div>
+                    </div>
+
+                    <div class="pt-1">
+                        <button type="submit" class="w-full py-3 rounded-xl text-white font-bold text-sm shadow-md login-btn-orange">
+                            Login
+                        </button>
+                    </div>
+
+                    <div class="text-center pt-2">
+                        <a href="javascript:void(0)" onclick="alert('Silakan hubungi Administrator IT AWX: admin@antaranwargaekspress.com / WA: 089634072621 untuk pemulihan kata sandi.')" class="text-xs text-slate-400 hover:text-orange-600 transition font-medium">
+                            Forgot Password ?
+                        </a>
+                    </div>
+                </form>
+
+                <div class="mt-8 pt-6 border-t border-slate-100 text-center">
+                    <a href="{{ route('home') }}" class="text-xs font-semibold text-slate-500 hover:text-orange-600 transition inline-flex items-center">
+                        <i class="fa-solid fa-arrow-left mr-1.5"></i> Kembali ke Profil Perusahaan AWX
+                    </a>
+                </div>
+
+            </div>
         </div>
 
-        @if(session('error'))
-            <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold text-center">
-                {{ session('error') }}
-            </div>
-        @endif
+        <!-- Right Side: TMS Brand Banner & Isometric 3D Graphic (Matching PDF Page 12) -->
+        <div class="hidden lg:flex lg:w-1/2 relative tms-bg flex-col justify-between p-12 overflow-hidden shadow-2xl">
+            <!-- Background Polygons & Watermark -->
+            <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/10 blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-orange-700/20 blur-3xl pointer-events-none"></div>
 
-        <form action="{{ route('login.post') }}" method="POST" class="space-y-4">
-            @csrf
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Alamat Email</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                        <i class="fa-solid fa-envelope text-sm"></i>
-                    </div>
-                    <input type="email" id="emailInput" name="email" value="admin@logistik.com" required
-                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition">
+            <!-- Central TMS Heading & Isometric Logistics Illustration -->
+            <div class="relative z-10 my-auto text-center flex flex-col items-center">
+                <div class="inline-block px-5 py-2 rounded-2xl bg-white/20 backdrop-blur-md text-white font-black text-4xl tracking-wider mb-2 shadow-inner">
+                    TMS
+                </div>
+                <h2 class="text-white font-extrabold text-xl tracking-wide drop-shadow-sm">
+                    Antaran Warga Ekspress
+                </h2>
+                <p class="text-white/80 text-xs font-medium max-w-sm mt-1">
+                    Transportation Management System & Customer Real-Time Portal
+                </p>
+
+                <!-- 3D Isometric Logistics Graphic -->
+                <div class="w-full max-w-md mt-6 transform hover:scale-105 transition duration-500">
+                    <img src="{{ asset('images/awx-tms-illustration.svg') }}" alt="TMS Isometric Antaran Warga Ekspress" class="w-full h-auto drop-shadow-2xl">
                 </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Password</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                        <i class="fa-solid fa-lock text-sm"></i>
-                    </div>
-                    <input type="password" id="passwordInput" name="password" value="password" required
-                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm font-medium transition">
-                </div>
-            </div>
-
-            <div class="flex items-center justify-between py-1">
-                <label class="flex items-center space-x-2 text-xs font-medium text-slate-600 cursor-pointer">
-                    <input type="checkbox" name="remember" class="rounded text-indigo-600 focus:ring-indigo-500">
-                    <span>Ingat Saya</span>
-                </label>
-            </div>
-
-            <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition shadow-lg shadow-indigo-600/30">
-                Masuk ke Sistem <i class="fa-solid fa-arrow-right ml-1"></i>
-            </button>
-        </form>
-
-        <!-- Quick Demo Credentials Box -->
-        <div class="mt-8 pt-6 border-t border-slate-100">
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 text-center">Akun Demo (Klik untuk Isi Quick Login):</p>
-            <div class="grid grid-cols-2 gap-2 text-xs font-medium">
-                <button onclick="fillDemo('admin@logistik.com', 'password')" class="p-2 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 text-slate-700 text-left transition">
-                    <div class="font-bold">Admin Logistik</div>
-                    <div class="text-[10px] text-slate-400 truncate">admin@logistik.com</div>
-                </button>
-
-                <button onclick="fillDemo('staff@logistik.com', 'password')" class="p-2 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 text-slate-700 text-left transition">
-                    <div class="font-bold">Staf Operasional</div>
-                    <div class="text-[10px] text-slate-400 truncate">staff@logistik.com</div>
-                </button>
-
-                <button onclick="fillDemo('kurir1@logistik.com', 'password')" class="p-2 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 text-slate-700 text-left transition">
-                    <div class="font-bold">Kurir / Driver</div>
-                    <div class="text-[10px] text-slate-400 truncate">kurir1@logistik.com</div>
-                </button>
-
-                <button onclick="fillDemo('customer@indofood.com', 'password')" class="p-2 rounded-lg bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 text-slate-700 text-left transition">
-                    <div class="font-bold">Customer / Klien</div>
-                    <div class="text-[10px] text-slate-400 truncate">customer@indofood.com</div>
-                </button>
+            <!-- Footer Badge -->
+            <div class="relative z-10 text-center text-[11px] text-white/70 font-semibold tracking-wider uppercase">
+                Cepat • Aman • Terpercaya &bull; Seluruh Wilayah Indonesia
             </div>
         </div>
     </div>
-
-    <script>
-        function fillDemo(email, pass) {
-            document.getElementById('emailInput').value = email;
-            document.getElementById('passwordInput').value = pass;
-        }
-    </script>
 </body>
 </html>

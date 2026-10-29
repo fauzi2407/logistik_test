@@ -4,47 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @php
-        $appName = \App\Models\AppSetting::get('app_name', 'Radja Express Logistics');
-        $appLogoUrl = \App\Models\AppSetting::get('app_logo_url', null);
-        $appLogoIcon = \App\Models\AppSetting::get('app_logo_icon', 'fa-truck-fast');
+        $appName = \App\Models\AppSetting::get('app_name', 'ANTARAN WARGA EKSPRESS');
+        $appLogoUrl = \App\Models\AppSetting::get('app_logo_url', 'images/awx-logo.svg');
     @endphp
-    <title>Lacak Pengiriman - {{ $appName }}</title>
+    <title>Lacak Pengiriman - {{ $appName }} (AWX)</title>
     
-    <!-- Favicon (Samakan Logo Aplikasi & Tab Bar Browser) -->
-    @if($appLogoUrl)
-        <link rel="icon" type="image/png" href="{{ asset($appLogoUrl) }}">
-        <link rel="shortcut icon" href="{{ asset($appLogoUrl) }}">
-        <link rel="apple-touch-icon" href="{{ asset($appLogoUrl) }}">
-    @else
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2225%22 fill=%22%234f46e5%22/><text y=%22.85em%22 x=%2250%25%22 text-anchor=%22middle%22 font-size=%2255%22>🚚</text></svg>">
-    @endif
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/awx-logo-horizontal.svg') }}">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
-<body class="min-h-full text-slate-100 flex flex-col justify-between">
+<body class="min-h-full bg-slate-950 text-slate-100 flex flex-col justify-between">
     <!-- Navbar -->
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50">
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            <a href="{{ route('tracking.index') }}" class="flex items-center space-x-3 text-white font-extrabold text-lg">
-                @if($appLogoUrl)
-                    <img src="{{ asset($appLogoUrl) }}" alt="Logo" class="w-9 h-9 object-contain rounded-xl">
-                @else
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                        <i class="fa-solid {{ $appLogoIcon }} text-white"></i>
-                    </div>
-                @endif
-                <span>{{ $appName }}</span>
+            <a href="{{ route('home') }}" class="flex items-center space-x-3 text-white font-extrabold text-lg">
+                <img src="{{ asset('images/awx-logo-horizontal.svg') }}" alt="AWX" class="h-9 object-contain">
             </a>
             <div class="flex items-center space-x-3">
+                <a href="{{ route('home') }}" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
+                    <i class="fa-solid fa-house mr-1"></i> Beranda
+                </a>
                 @auth
-                    <a href="{{ route('dashboard') }}" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition">
-                        <i class="fa-solid fa-gauge ml-1"></i> Ke Dashboard
+                    <a href="{{ route('dashboard') }}" class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs transition shadow-md shadow-orange-500/20">
+                        <i class="fa-solid fa-chart-line mr-1"></i> Dashboard
                     </a>
                 @else
-                    <a href="{{ route('login') }}" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition border border-slate-700">
-                        <i class="fa-solid fa-right-to-bracket mr-1"></i> Login Portal
+                    <a href="{{ route('login') }}" class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs transition shadow-md shadow-orange-500/20">
+                        <i class="fa-solid fa-right-to-bracket mr-1"></i> Login TMS
                     </a>
                 @endauth
             </div>

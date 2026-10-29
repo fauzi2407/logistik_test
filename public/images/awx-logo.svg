@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="awxNavyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c2340"/>
+      <stop offset="100%" stop-color="#07172b"/>
+    </linearGradient>
+    <linearGradient id="awxOrangeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff7300"/>
+      <stop offset="100%" stop-color="#f35a00"/>
+    </linearGradient>
+    <linearGradient id="boxFrontGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f2b52"/>
+      <stop offset="100%" stop-color="#07172b"/>
+    </linearGradient>
+    <linearGradient id="boxSideGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#163e75"/>
+      <stop offset="100%" stop-color="#0d2444"/>
+    </linearGradient>
+    <linearGradient id="boxTopGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e4f94"/>
+      <stop offset="100%" stop-color="#133869"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <g transform="translate(10, 5)">
+    <!-- Dynamic Blue Swoosh curve under AW -->
+    <path d="M 40 102 C 120 120, 220 115, 275 88 C 220 102, 120 105, 40 102 Z" fill="#0c2340" />
+
+    <!-- Letter A & W (Navy Bold Italic) -->
+    <g fill="url(#awxNavyGrad)" transform="skewX(-14)">
+      <!-- A -->
+      <path d="M 85 88 L 118 88 L 138 22 L 112 22 Z" />
+      <path d="M 112 22 L 138 22 L 158 88 L 132 88 Z" />
+      <polygon points="106,68 142,68 138,56 110,56" />
+
+      <!-- W -->
+      <path d="M 148 22 L 170 22 L 186 72 L 202 22 L 222 22 L 238 72 L 254 22 L 274 22 L 250 88 L 228 88 L 212 40 L 196 88 L 174 88 Z" />
+    </g>
+
+    <!-- Speed Dash Lines under X -->
+    <path d="M 235 106 L 260 106" stroke="#ff7300" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M 225 114 L 255 114" stroke="#ff7300" stroke-width="3.5" stroke-linecap="round"/>
+
+    <!-- Letter X with Rocket / Arrow Upper Right -->
+    <!-- Downward slant of X -->
+    <path d="M 288 32 L 320 18 L 398 94 L 372 102 Z" fill="url(#awxOrangeGrad)" transform="skewX(-6)" />
+    <!-- Upward Arrow Slant of X -->
+    <path d="M 276 96 L 305 102 L 390 40 L 415 48 L 442 22 L 402 25 L 408 34 L 375 48 Z" fill="url(#awxOrangeGrad)" filter="url(#shadow)" />
+    <!-- Orange Speed streak below arrow -->
+    <path d="M 330 92 Q 380 75 425 58 L 418 64 Q 375 80 325 96 Z" fill="#ff7300" />
+
+    <!-- 3D Cardboard Box under X -->
+    <g transform="translate(268, 82) scale(0.95)" filter="url(#shadow)">
+      <!-- Top Face -->
+      <polygon points="40,14 75,2 75,3 40,15 5,3" fill="url(#boxTopGrad)" />
+      <polygon points="40,14 75,3 40,26 5,14" fill="url(#boxTopGrad)" opacity="0.9" />
+      <!-- Tape Top -->
+      <polygon points="36,13 44,15 58,10 50,8" fill="#2d6cb5" />
+      <polygon points="36,13 44,15 26,20 18,18" fill="#2d6cb5" />
+
+      <!-- Left Face -->
+      <polygon points="5,14 40,26 40,62 5,50" fill="url(#boxFrontGrad)" />
+      <!-- Tape Front Left -->
+      <polygon points="20,19 26,21 26,57 20,55" fill="#1b497e" />
+
+      <!-- Right Face -->
+      <polygon points="40,26 75,14 75,50 40,62" fill="url(#boxSideGrad)" />
+      <!-- Tape Front Right -->
+      <polygon points="54,21 60,19 60,55 54,57" fill="#235c9e" />
+    </g>
+
+    <!-- Brand Typography -->
+    <!-- "ANTARAN WARGA" -->
+    <text x="240" y="172" text-anchor="middle" font-family="'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" font-weight="900" font-size="34" letter-spacing="3" fill="#0c2340">
+      ANTARAN WARGA
+    </text>
+
+    <!-- "EKSPRESS" -->
+    <text x="240" y="202" text-anchor="middle" font-family="'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" font-weight="900" font-style="italic" font-size="28" letter-spacing="7" fill="url(#awxOrangeGrad)">
+      EKSPRESS
+    </text>
+
+    <!-- Slogan / Motto: "CEPAT • AMAN • TERPERCAYA" -->
+    <g transform="translate(240, 224)">
+      <text x="0" y="0" text-anchor="middle" font-family="'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" font-weight="800" font-size="13" letter-spacing="5" fill="#0c2340">
+        CEPAT <tspan fill="#ff7300">•</tspan> AMAN <tspan fill="#ff7300">•</tspan> TERPERCAYA
+      </text>
+    </g>
+  </g>
+</svg>

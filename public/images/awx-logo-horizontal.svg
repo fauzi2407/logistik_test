@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 80" width="100%" height="100%">
+  <defs>
+    <linearGradient id="awxNavyGradH" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c2340"/>
+      <stop offset="100%" stop-color="#07172b"/>
+    </linearGradient>
+    <linearGradient id="awxOrangeGradH" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff7300"/>
+      <stop offset="100%" stop-color="#f35a00"/>
+    </linearGradient>
+    <filter id="shadowH" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <g transform="translate(10, 8)">
+    <!-- Mini Mark Icon -->
+    <g transform="translate(-5, -6) scale(0.68)">
+      <!-- Curve -->
+      <path d="M 10 75 C 60 88, 110 82, 140 68 C 110 76, 60 78, 10 75 Z" fill="#0c2340" />
+      <!-- AW -->
+      <g fill="url(#awxNavyGradH)" transform="skewX(-14)">
+        <path d="M 25 68 L 44 68 L 56 22 L 40 22 Z" />
+        <path d="M 40 22 L 56 22 L 68 68 L 52 68 Z" />
+        <polygon points="35,54 59,54 56,46 38,46" />
+        <path d="M 64 22 L 78 22 L 88 56 L 98 22 L 110 22 L 120 56 L 130 22 L 144 22 L 128 68 L 114 68 L 104 35 L 94 68 L 80 68 Z" />
+      </g>
+      <!-- X Arrow -->
+      <path d="M 148 28 L 168 18 L 210 68 L 194 74 Z" fill="url(#awxOrangeGradH)" />
+      <path d="M 140 70 L 158 74 L 208 30 L 222 36 L 238 18 L 214 20 L 218 26 L 198 35 Z" fill="url(#awxOrangeGradH)" filter="url(#shadowH)" />
+      <!-- 3D Box -->
+      <g transform="translate(142, 60) scale(0.65)">
+        <polygon points="25,10 48,2 25,18 2,10" fill="#1e4f94" />
+        <polygon points="2,10 25,18 25,42 2,34" fill="#0f2b52" />
+        <polygon points="25,18 48,10 48,34 25,42" fill="#163e75" />
+      </g>
+    </g>
+
+    <!-- Typography on right -->
+    <g transform="translate(162, 0)">
+      <text x="0" y="27" font-family="'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" font-weight="900" font-size="21" letter-spacing="1.2" fill="#0c2340">
+        ANTARAN WARGA
+      </text>
+      <text x="0" y="48" font-family="'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" font-weight="900" font-style="italic" font-size="18" letter-spacing="3.5" fill="url(#awxOrangeGradH)">
+        EKSPRESS
+      </text>
+      <text x="0" y="64" font-family="'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif" font-weight="800" font-size="8.5" letter-spacing="2.8" fill="#52647c">
+        CEPAT <tspan fill="#ff7300">•</tspan> AMAN <tspan fill="#ff7300">•</tspan> TERPERCAYA
+      </text>
+    </g>
+  </g>
+</svg>

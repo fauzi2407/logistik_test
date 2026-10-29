@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="tmsBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffb703" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#fb8500" stop-opacity="0.05"/>
+    </linearGradient>
+    <linearGradient id="tmsOrange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff8500"/>
+      <stop offset="100%" stop-color="#e65c00"/>
+    </linearGradient>
+    <linearGradient id="tmsYellow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd166"/>
+      <stop offset="100%" stop-color="#f4a261"/>
+    </linearGradient>
+    <linearGradient id="boxIsoTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <linearGradient id="boxIsoLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cbd5e1"/>
+      <stop offset="100%" stop-color="#94a3b8"/>
+    </linearGradient>
+    <linearGradient id="boxIsoRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <filter id="isoShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="15" flood-color="#0c2340" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Isometric Ground Grid Connection Lines -->
+  <g stroke="#ff9e00" stroke-width="2.5" stroke-dasharray="6,6" fill="none" opacity="0.6">
+    <path d="M 170 330 L 250 370 L 390 300 L 460 340" />
+    <path d="M 290 280 L 390 220 L 480 260" />
+    <path d="M 220 230 L 290 280 L 290 380" />
+  </g>
+
+  <!-- Shop / Storefront Hub Isometric (Left) -->
+  <g transform="translate(110, 180)" filter="url(#isoShadow)">
+    <!-- Base building -->
+    <polygon points="60,35 120,0 60,-35 0,0" fill="#ffffff" />
+    <polygon points="0,0 60,35 60,115 0,80" fill="#e2e8f0" />
+    <polygon points="60,35 120,0 120,80 60,115" fill="#cbd5e1" />
+
+    <!-- Yellow Striped Awning -->
+    <g transform="translate(-10, -10)">
+      <polygon points="10,25 70,58 85,48 25,16" fill="url(#tmsOrange)" />
+      <polygon points="25,16 85,48 100,38 40,7" fill="url(#tmsYellow)" />
+      <polygon points="40,7 100,38 115,28 55,-3" fill="url(#tmsOrange)" />
+      <polygon points="55,-3 115,28 130,18 70,-13" fill="url(#tmsYellow)" />
+    </g>
+
+    <!-- Glass Storefront Display -->
+    <polygon points="12,25 50,47 50,90 12,68" fill="#38bdf8" opacity="0.4" />
+    <!-- Shop Door -->
+    <polygon points="70,55 105,35 105,100 70,110" fill="#0c2340" />
+    <polygon points="74,58 90,48 90,95 74,103" fill="#38bdf8" opacity="0.6" />
+  </g>
+
+  <!-- Person Operating Scanner / Tablet -->
+  <g transform="translate(195, 255)">
+    <!-- Shadow -->
+    <ellipse cx="15" cy="85" rx="14" ry="5" fill="#000" opacity="0.15" />
+    <!-- Legs -->
+    <path d="M 10 50 L 8 82" stroke="#0c2340" stroke-width="6" stroke-linecap="round"/>
+    <path d="M 20 50 L 24 82" stroke="#0c2340" stroke-width="6" stroke-linecap="round"/>
+    <!-- Torso Yellow Shirt -->
+    <path d="M 5 25 L 25 25 L 22 54 L 8 54 Z" fill="#ffb703" />
+    <!-- Head -->
+    <circle cx="15" cy="14" r="9" fill="#fcd34d" />
+    <path d="M 8 12 Q 15 4 22 10" stroke="#0c2340" stroke-width="4" fill="none" stroke-linecap="round" />
+    <!-- Arm with Scanner -->
+    <path d="M 22 30 L 38 38 L 44 28" stroke="#ffb703" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <rect x="42" y="24" width="10" height="15" rx="2" fill="#0c2340" transform="rotate(-15 42 24)" />
+    <!-- Laser scanner beam -->
+    <line x1="52" y1="32" x2="80" y2="45" stroke="#ef4444" stroke-width="2" stroke-dasharray="3,2" />
+  </g>
+
+  <!-- Stacked Cargo Packages Isometric (Center Bottom) -->
+  <g transform="translate(320, 310)" filter="url(#isoShadow)">
+    <!-- Box 1 -->
+    <g transform="translate(-40, 20)">
+      <polygon points="30,17 60,0 30,-17 0,0" fill="url(#boxIsoTop)" />
+      <polygon points="0,0 30,17 30,50 0,33" fill="url(#boxIsoLeft)" />
+      <polygon points="30,17 60,0 60,33 30,50" fill="url(#boxIsoRight)" />
+      <!-- Tape -->
+      <polygon points="12,-7 18,-3 48,-14 42,-17" fill="#ff7300" />
+      <polygon points="12,7 18,3 18,36 12,40" fill="#e65c00" />
+    </g>
+
+    <!-- Box 2 (Adjacent) -->
+    <g transform="translate(15, -10)">
+      <polygon points="30,17 60,0 30,-17 0,0" fill="url(#boxIsoTop)" />
+      <polygon points="0,0 30,17 30,50 0,33" fill="url(#boxIsoLeft)" />
+      <polygon points="30,17 60,0 60,33 30,50" fill="url(#boxIsoRight)" />
+      <!-- Tape -->
+      <polygon points="12,-7 18,-3 48,-14 42,-17" fill="#0c2340" />
+    </g>
+
+    <!-- Box 3 (Top Stack) -->
+    <g transform="translate(-15, -30)">
+      <polygon points="30,17 60,0 30,-17 0,0" fill="url(#boxIsoTop)" />
+      <polygon points="0,0 30,17 30,45 0,28" fill="url(#boxIsoLeft)" />
+      <polygon points="30,17 60,0 60,28 30,45" fill="url(#boxIsoRight)" />
+      <!-- Tape -->
+      <polygon points="12,-7 18,-3 48,-14 42,-17" fill="#ff7300" />
+    </g>
+  </g>
+
+  <!-- Big Smartphone with Checked Delivery Portal (Right Center) -->
+  <g transform="translate(430, 160)" filter="url(#isoShadow)">
+    <!-- Isometric Phone Body -->
+    <polygon points="35,20 70,0 35,-20 0,0" fill="#ffffff" />
+    <polygon points="0,0 35,20 35,140 0,120" fill="#e2e8f0" />
+    <polygon points="35,20 70,0 70,120 35,140" fill="#cbd5e1" />
+    <!-- Screen Glass -->
+    <polygon points="5,5 32,21 32,125 5,108" fill="#f8fafc" />
+    <polygon points="32,21 65,3 65,108 32,125" fill="#f1f5f9" />
+    
+    <!-- Success Checked Badge floating on phone -->
+    <g transform="translate(35, 60)">
+      <circle cx="0" cy="0" r="22" fill="#ff8500" />
+      <circle cx="0" cy="0" r="18" fill="#ffd166" />
+      <path d="M -7 -1 L -2 5 L 8 -5" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </g>
+  </g>
+
+  <!-- Courier on Scooter Delivery Boy (Bottom Right) -->
+  <g transform="translate(450, 310)" filter="url(#isoShadow)">
+    <!-- Shadow -->
+    <ellipse cx="40" cy="88" rx="35" ry="12" fill="#000" opacity="0.2" />
+
+    <!-- Scooter Wheels -->
+    <circle cx="15" cy="80" r="14" fill="#0c2340" />
+    <circle cx="15" cy="80" r="7" fill="#94a3b8" />
+    <circle cx="70" cy="72" r="14" fill="#0c2340" />
+    <circle cx="70" cy="72" r="7" fill="#94a3b8" />
+
+    <!-- Scooter Frame in Yellow / Orange -->
+    <path d="M 15 80 L 35 78 L 48 55 L 68 55 L 70 72" stroke="url(#tmsOrange)" stroke-width="10" stroke-linecap="round" fill="none" />
+    <polygon points="30,55 55,55 58,78 28,78" fill="#ffb703" />
+
+    <!-- Handlebar & Headlight -->
+    <path d="M 62 55 L 68 32 L 60 30" stroke="#0c2340" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <circle cx="70" cy="34" r="5" fill="#ffd166" />
+
+    <!-- Cargo Thermal Box on Back -->
+    <g transform="translate(8, 38)">
+      <rect x="0" y="0" width="24" height="24" rx="4" fill="#0c2340" />
+      <!-- AWX logo mark on box -->
+      <path d="M 4 12 L 10 12 L 14 18 L 18 6" stroke="#ff7300" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <!-- Courier Figure -->
+    <!-- Torso -->
+    <path d="M 40 32 L 50 32 L 52 56 L 38 56 Z" fill="#ff7300" />
+    <!-- Helmet -->
+    <circle cx="45" cy="20" r="11" fill="#ffd166" />
+    <path d="M 48 18 Q 55 20 54 26 L 47 26 Z" fill="#0c2340" />
+    <!-- Arm holding handlebar -->
+    <path d="M 44 36 L 58 35 L 66 33" stroke="#ff7300" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  </g>
+</svg>

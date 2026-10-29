@@ -11,24 +11,24 @@ class SettingController extends Controller
     public function index()
     {
         $settings = [
-            'app_name' => AppSetting::get('app_name', 'Radja Express Logistics'),
-            'app_tagline' => AppSetting::get('app_tagline', 'Logistics & Supply Chain Management System'),
+            'app_name' => AppSetting::get('app_name', 'ANTARAN WARGA EKSPRESS'),
+            'app_tagline' => AppSetting::get('app_tagline', 'CEPAT • AMAN • TERPERCAYA'),
             'app_logo_icon' => AppSetting::get('app_logo_icon', 'fa-truck-fast'),
-            'app_logo_url' => AppSetting::get('app_logo_url', null),
-            'app_theme' => AppSetting::get('app_theme', 'indigo'),
-            'company_phone' => AppSetting::get('company_phone', '021-7654321'),
-            'company_email' => AppSetting::get('company_email', 'info@logistik.com'),
-            'company_address' => AppSetting::get('company_address', 'Jl. Logistik Utama No. 88, Jakarta Selatan'),
+            'app_logo_url' => AppSetting::get('app_logo_url', 'images/awx-logo.svg'),
+            'app_theme' => AppSetting::get('app_theme', 'awx'),
+            'company_phone' => AppSetting::get('company_phone', '089634072621'),
+            'company_email' => AppSetting::get('company_email', 'admin@antaranwargaekspress.com'),
+            'company_address' => AppSetting::get('company_address', 'Jalan Kramat Pangeran Syarief No.13 Rt. 001 Rw. 08, Kel. Lubang Buaya, Kec. Cipayung, Jakarta Timur'),
             'bank_name' => AppSetting::get('bank_name', 'Bank BCA'),
             'bank_account_number' => AppSetting::get('bank_account_number', '8877-6655-44'),
-            'bank_account_name' => AppSetting::get('bank_account_name', 'PT Radja Express Logistics'),
+            'bank_account_name' => AppSetting::get('bank_account_name', 'PT ANTARAN WARGA EKSPRESS'),
             
             // Website Company Profile & Hero Banner Settings
-            'hero_badge' => AppSetting::get('hero_badge', 'Penyedia Jasa Ekspedisi & Supply Chain Logistik #1'),
+            'hero_badge' => AppSetting::get('hero_badge', 'Solusi Pengiriman Barang Cepat, Aman, dan Terpercaya'),
             'hero_title' => AppSetting::get('hero_title', 'Solusi Pengiriman Cargo & Logistik Terpercaya di Indonesia'),
             'hero_subtitle' => AppSetting::get('hero_subtitle', 'Pengiriman paket cepat, handal, dan aman hingga ke pelosok nusantara. Dilengkapi pelacakan real-time GPS, konfirmasi bukti penerimaan digital (ePOD), & jaminan SLA tepat waktu.'),
-            'about_us_description' => AppSetting::get('about_us_description', 'Kami mengintegrasikan teknologi logistik modern dengan jaringan hub transit yang luas untuk memberikan kenyamanan dan kepastian dalam setiap pengiriman.'),
-            'operational_hours' => AppSetting::get('operational_hours', 'Senin - Sabtu: 08:00 - 20:00 WIB'),
+            'about_us_description' => AppSetting::get('about_us_description', 'PT. ANTARAN WARGA EKSPRESS lahir menjadi perusahaan Courier & Cargo berskala Nasional yang mumpuni dan menjelma menjadi perusahaan jasa pengiriman & logistik yang siap bersaing dalam era globalisasi dengan selalu memberikan kepuasan pelanggan di setiap hal.'),
+            'operational_hours' => AppSetting::get('operational_hours', 'Operasional 24 Jam Nonstop / CS: 08:00 - 20:00 WIB'),
         ];
 
         return view('settings.index', compact('settings'));
@@ -40,7 +40,7 @@ class SettingController extends Controller
             'app_name' => 'required|string|max:255',
             'app_tagline' => 'nullable|string|max:255',
             'app_logo_icon' => 'required|string|max:100',
-            'app_theme' => 'required|string|in:indigo,emerald,amber,rose,slate',
+            'app_theme' => 'required|string|in:awx,indigo,emerald,amber,rose,slate',
             'logo_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             'company_phone' => 'nullable|string|max:100',
             'company_email' => 'nullable|string|max:100',

@@ -20,7 +20,9 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes (Bebas Akses Tanpa Login)
 Route::get('/', [\App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::post('/contact-inquiries', [\App\Http\Controllers\CustomerInquiryController::class, 'storePublic'])->name('contact-inquiries.store');
 Route::get('/track', [TrackingController::class, 'index'])->name('tracking.index');
+Route::get('/api/track', [TrackingController::class, 'apiTrack'])->name('api.track');
 Route::match(['get', 'post'], '/tariffs/calculate', [TariffController::class, 'calculate'])->name('tariffs.calculate');
 
 // Authentication Routes
@@ -39,6 +41,11 @@ Route::middleware(['auth'])->group(function () {
     // Executive Dashboard (Accessible to all authenticated users based on role view)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Customer Portal Specific Features (Matching AWX TMS Document Pages 13-20)
+    Route::get('/customer/report-pod', [DashboardController::class, 'customerReportPod'])->name('customer.report-pod');
+    Route::get('/customer/report-pod/export', [DashboardController::class, 'customerExportPodExcel'])->name('customer.export-pod');
+    Route::match(['get', 'post'], '/customer/print-multiple', [DashboardController::class, 'customerPrintMultiple'])->name('customer.print-multiple');
+
     // Central Notifications (Accessible to all authenticated roles: Admin, Staff, Courier, Customer)
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
@@ -54,6 +61,11 @@ Route::middleware(['auth'])->group(function () {
 
     // Customer Management
     Route::resource('customers', CustomerController::class);
+
+    // Pesan & Follow Up Layanan Pelanggan (Form Hubungi Tim CS AWX)
+    Route::get('/customer-inquiries', [\App\Http\Controllers\CustomerInquiryController::class, 'index'])->name('customer-inquiries.index');
+    Route::put('/customer-inquiries/{id}', [\App\Http\Controllers\CustomerInquiryController::class, 'update'])->name('customer-inquiries.update');
+    Route::delete('/customer-inquiries/{id}', [\App\Http\Controllers\CustomerInquiryController::class, 'destroy'])->name('customer-inquiries.destroy');
 
     // Invoices Management (Penagihan Biaya Pengiriman)
     Route::get('/invoices/{id}/print', [InvoiceController::class, 'print'])->name('invoices.print');

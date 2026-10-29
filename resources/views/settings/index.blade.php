@@ -129,6 +129,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3" id="themeGrid">
                 @php
                     $themes = [
+                        'awx' => ['name' => 'AWX Tangerine', 'color' => 'bg-orange-500', 'desc' => 'Antaran Warga Ekspress'],
                         'indigo' => ['name' => 'Indigo Slate', 'color' => 'bg-indigo-600', 'desc' => 'Modern Corporate'],
                         'emerald' => ['name' => 'Emerald Green', 'color' => 'bg-emerald-600', 'desc' => 'Supply Chain Eco'],
                         'amber' => ['name' => 'Amber Gold', 'color' => 'bg-amber-500', 'desc' => 'Premium Cargo'],

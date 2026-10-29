@@ -11,33 +11,29 @@
         $appTheme = \App\Models\AppSetting::get('app_theme', 'indigo');
 
         $themeColors = [
+            'awx' => ['primary' => 'orange', 'bg' => 'bg-orange-500', 'hover' => 'hover:bg-orange-600', 'text' => 'text-orange-600', 'border' => 'border-orange-500', 'hex' => '%23f58220'],
             'indigo' => ['primary' => 'indigo', 'bg' => 'bg-indigo-600', 'hover' => 'hover:bg-indigo-700', 'text' => 'text-indigo-600', 'border' => 'border-indigo-600', 'hex' => '%234f46e5'],
             'emerald' => ['primary' => 'emerald', 'bg' => 'bg-emerald-600', 'hover' => 'hover:bg-emerald-700', 'text' => 'text-emerald-600', 'border' => 'border-emerald-600', 'hex' => '%23059669'],
             'amber' => ['primary' => 'amber', 'bg' => 'bg-amber-500', 'hover' => 'hover:bg-amber-600', 'text' => 'text-amber-600', 'border' => 'border-amber-500', 'hex' => '%23d97706'],
             'rose' => ['primary' => 'rose', 'bg' => 'bg-rose-600', 'hover' => 'hover:bg-rose-700', 'text' => 'text-rose-600', 'border' => 'border-rose-600', 'hex' => '%23e11d48'],
             'slate' => ['primary' => 'slate', 'bg' => 'bg-slate-800', 'hover' => 'hover:bg-slate-900', 'text' => 'text-slate-800', 'border' => 'border-slate-800', 'hex' => '%231e293b'],
         ];
-        $t = $themeColors[$appTheme] ?? $themeColors['indigo'];
+        $t = $themeColors[$appTheme] ?? $themeColors['awx'];
     @endphp
 
     <title>@yield('title', 'Dashboard') - {{ $appName }}</title>
     
     <!-- Favicon (Samakan Logo Aplikasi & Tab Bar Browser) -->
-    @if($appLogoUrl)
-        <link rel="icon" type="image/png" href="{{ asset($appLogoUrl) }}">
-        <link rel="shortcut icon" href="{{ asset($appLogoUrl) }}">
-        <link rel="apple-touch-icon" href="{{ asset($appLogoUrl) }}">
-    @else
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2225%22 fill=%22{{ $t['hex'] }}%22/><text y=%22.85em%22 x=%2250%25%22 text-anchor=%22middle%22 font-size=%2255%22>🚚</text></svg>">
-    @endif
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/awx-logo-horizontal.svg') }}">
+    <link rel="shortcut icon" href="{{ asset('images/awx-logo-horizontal.svg') }}">
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
         .touch-btn { touch-action: manipulation; }
     </style>
     @stack('styles')
@@ -50,19 +46,9 @@
     <!-- Sidebar Navigation (Responsive Drawer on Mobile) -->
     <aside id="mainSidebar" class="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 shadow-2xl z-40 fixed inset-y-0 left-0 transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out">
         <!-- Brand Header -->
-        <div class="h-16 md:h-20 flex items-center justify-between px-5 border-b border-slate-800 bg-slate-950/60">
+        <div class="h-16 md:h-20 flex items-center justify-between px-4 border-b border-slate-800 bg-slate-950/80">
             <a href="{{ route('dashboard') }}" class="flex items-center space-x-3 group">
-                @if($appLogoUrl)
-                    <img src="{{ asset($appLogoUrl) }}" alt="Logo" class="w-9 h-9 object-contain rounded-xl">
-                @else
-                    <div class="w-9 h-9 rounded-xl {{ $t['bg'] }} flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition">
-                        <i class="fa-solid {{ $appLogoIcon }} text-base"></i>
-                    </div>
-                @endif
-                <div>
-                    <h1 class="font-extrabold text-white text-sm tracking-tight leading-tight uppercase truncate max-w-[130px]">{{ $appName }}</h1>
-                    <p class="text-[10px] text-slate-400 font-medium truncate max-w-[130px]">{{ $appTagline }}</p>
-                </div>
+                <img src="{{ asset('images/awx-logo.svg') }}" alt="AWX Antaran Warga Ekspress" class="h-12 w-auto object-contain">
             </a>
             <button onclick="toggleMobileSidebar()" class="md:hidden text-slate-400 hover:text-white p-1">
                 <i class="fa-solid fa-xmark text-lg"></i>
@@ -107,21 +93,36 @@
                     </a>
                 </div>
             @elseif(Auth::user()->role === 'customer')
-                <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-2">Portal Customer / Klien</div>
+                <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-2">Portal Customer AWX</div>
                 
                 <a href="{{ route('dashboard') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('dashboard') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
-                    <i class="fa-solid fa-chart-line text-sm"></i>
-                    <span>Dashboard Customer</span>
+                    <i class="fa-solid fa-house text-sm"></i>
+                    <span>Home (Dashboard)</span>
+                </a>
+
+                <a href="{{ route('tracking.index') }}" target="_blank" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition text-slate-400 hover:bg-slate-800 hover:text-white">
+                    <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                    <span>Trace & Tracking</span>
+                </a>
+
+                <a href="{{ route('customer.print-multiple') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('customer.print-multiple') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-print text-sm"></i>
+                    <span>Print Multiple</span>
+                </a>
+
+                <a href="{{ route('customer.report-pod') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('customer.report-pod') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                    <i class="fa-solid fa-file-excel text-sm"></i>
+                    <span>Report (POD Customer)</span>
                 </a>
 
                 <a href="{{ route('delivery-orders.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('delivery-orders.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fa-solid fa-file-contract text-sm"></i>
-                    <span>DO Saya / Surat Jalan</span>
+                    <span>DO / Surat Jalan</span>
                 </a>
 
                 <a href="{{ route('shipments.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('shipments.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fa-solid fa-box text-sm"></i>
-                    <span>Resi Pengiriman Saya</span>
+                    <span>Monitoring Resi</span>
                 </a>
 
                 <a href="{{ route('notifications.index') }}" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('notifications.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
@@ -134,13 +135,6 @@
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">{{ $customerUnread > 99 ? '99+' : $customerUnread }}</span>
                     @endif
                 </a>
-
-                <div class="pt-4">
-                    <a href="{{ route('tracking.index') }}" target="_blank" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs text-indigo-400 bg-indigo-950/50 hover:bg-indigo-900/50 border border-indigo-800/40 transition">
-                        <i class="fa-solid fa-magnifying-glass-location text-sm"></i>
-                        <span>Portal Lacak Resi Publik</span>
-                    </a>
-                </div>
             @else
                 <div class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider px-3 mb-2">Utama & Analitik</div>
                 
@@ -180,6 +174,28 @@
                 <a href="{{ route('customers.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('customers.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
                     <i class="fa-solid fa-building-user text-sm"></i>
                     <span>Data Customer & Bank</span>
+                </a>
+                @endif
+
+                @if(Auth::user()->hasPermission('customer-inquiries.index', 'view'))
+                @php
+                    $newInquiriesCount = 0;
+                    try {
+                        if (\Illuminate\Support\Facades\Schema::hasTable('customer_inquiries')) {
+                            $newInquiriesCount = \App\Models\CustomerInquiry::where('status', 'new')->count();
+                        }
+                    } catch (\Throwable $e) {
+                        $newInquiriesCount = 0;
+                    }
+                @endphp
+                <a href="{{ route('customer-inquiries.index') }}" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs transition {{ request()->routeIs('customer-inquiries.*') ? $t['bg'] . ' text-white shadow-md' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }}">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-headset text-sm text-orange-400"></i>
+                        <span>Pesan & Follow Up CS</span>
+                    </div>
+                    @if($newInquiriesCount > 0)
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">{{ $newInquiriesCount > 99 ? '99+' : $newInquiriesCount }}</span>
+                    @endif
                 </a>
                 @endif
 
@@ -471,10 +487,13 @@
                         <i class="fa-solid fa-sliders mr-1"></i> Pengaturan
                     </a>
                 @endif
-                <div class="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl">
-                    <i class="fa-solid fa-user-check text-emerald-600 mr-1"></i>
-                    <span class="hidden sm:inline">{{ Auth::user()->name }}</span>
-                    <span class="uppercase text-[10px] bg-slate-200 px-1.5 py-0.5 rounded ml-1 font-extrabold">{{ Auth::user()->role }}</span>
+                <div class="flex items-center space-x-2.5 bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-full shadow-sm">
+                    <span class="text-xs font-medium text-slate-500 hidden sm:inline">
+                        Hello, <strong class="text-slate-900 font-extrabold uppercase">{{ Auth::user()->name }}</strong>
+                    </span>
+                    <div class="w-7 h-7 rounded-full bg-amber-400 text-amber-950 font-black text-xs flex items-center justify-center shadow-sm">
+                        {{ strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', Auth::user()->name) ?: 'US', 0, 2)) }}
+                    </div>
                 </div>
             </div>
         </header>

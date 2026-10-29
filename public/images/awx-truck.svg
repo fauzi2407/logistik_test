@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="truckBoxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <linearGradient id="roadGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff7300" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#ffb703" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0c2340" stop-opacity="0.9"/>
+    </linearGradient>
+    <filter id="truckShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#020d1a" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Speed Road perspective effect -->
+  <g transform="translate(0, 260)">
+    <!-- Speed Lines on Road -->
+    <path d="M 0 60 L 700 30 L 700 120 L 0 120 Z" fill="#08182b" opacity="0.6" />
+    <path d="M 0 65 L 700 35 L 700 45 L 0 75 Z" fill="#ff7300" opacity="0.8" />
+    <path d="M 50 85 L 680 50 L 680 56 L 50 91 Z" fill="#ffffff" opacity="0.9" stroke-dasharray="30,20" />
+    <path d="M 0 98 L 700 62 L 700 70 L 0 106 Z" fill="#ff9e00" opacity="0.5" />
+  </g>
+
+  <!-- The AWX Delivery Truck Container Group -->
+  <g transform="translate(60, 45)" filter="url(#truckShadow)">
+    <!-- Rear Box / Cargo Body -->
+    <g transform="translate(180, 40)">
+      <!-- Box Outer -->
+      <rect x="0" y="0" width="370" height="210" rx="6" fill="url(#truckBoxGrad)" stroke="#cbd5e1" stroke-width="2"/>
+      
+      <!-- Box Corner Metal Trims -->
+      <rect x="0" y="0" width="8" height="210" fill="#94a3b8" />
+      <rect x="362" y="0" width="8" height="210" fill="#94a3b8" />
+      <rect x="0" y="0" width="370" height="8" fill="#94a3b8" />
+      <rect x="0" y="202" width="370" height="8" fill="#94a3b8" />
+
+      <!-- Dynamic Swoosh Stripes across the cargo box -->
+      <path d="M 0 160 C 120 180, 220 130, 362 100 L 362 135 C 220 165, 120 205, 0 185 Z" fill="#0c2340" />
+      <path d="M 0 185 C 120 205, 220 165, 362 135 L 362 155 C 220 185, 120 215, 0 202 Z" fill="#ff7300" />
+
+      <!-- Large AWX Logo on Cargo Box -->
+      <g transform="translate(70, 30) scale(0.65)">
+        <!-- AW -->
+        <text x="50" y="60" font-family="'Plus Jakarta Sans', sans-serif" font-weight="900" font-style="italic" font-size="52" fill="#0c2340" letter-spacing="-1">
+          AW<tspan fill="#ff7300">X</tspan>
+        </text>
+        <!-- Arrow on X -->
+        <path d="M 160 22 L 182 12 L 175 32 Z" fill="#ff7300" />
+        <path d="M 132 42 L 180 14" stroke="#ff7300" stroke-width="6" stroke-linecap="round"/>
+
+        <!-- 3D Box under X -->
+        <g transform="translate(140, 48) scale(0.55)">
+          <polygon points="20,8 40,0 20,16 0,8" fill="#1e4f94" />
+          <polygon points="0,8 20,16 20,38 0,30" fill="#0f2b52" />
+          <polygon points="20,16 40,8 40,30 20,38" fill="#163e75" />
+        </g>
+
+        <!-- Brand Name -->
+        <text x="110" y="90" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-weight="900" font-size="20" letter-spacing="1.5" fill="#0c2340">
+          ANTARAN WARGA
+        </text>
+        <text x="110" y="108" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-weight="900" font-style="italic" font-size="16" letter-spacing="3" fill="#ff7300">
+          EKSPRESS
+        </text>
+        <text x="110" y="122" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-weight="800" font-size="8" letter-spacing="2" fill="#0c2340">
+          CEPAT • AMAN • TERPERCAYA
+        </text>
+      </g>
+    </g>
+
+    <!-- Truck Cabin (Front, Left-facing or Right-facing: here facing left/forward) -->
+    <g transform="translate(40, 80)">
+      <!-- Windshield & Cabin Body -->
+      <path d="M 140 10 L 80 18 L 40 70 L 25 100 L 20 170 L 140 170 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+      <!-- Windshield Glass -->
+      <path d="M 125 22 L 78 28 L 46 72 L 40 95 L 125 95 Z" fill="#0f172a" opacity="0.85" />
+      <path d="M 60 38 L 50 82" stroke="#38bdf8" stroke-width="3" opacity="0.6" stroke-linecap="round" />
+
+      <!-- Side Door Window -->
+      <polygon points="65,40 120,40 120,90 52,90" fill="#1e293b" opacity="0.9"/>
+      
+      <!-- Door Handle -->
+      <rect x="110" y="112" width="16" height="5" rx="2" fill="#475569" />
+
+      <!-- Mini AWX Logo on Cabin Door -->
+      <g transform="translate(55, 105) scale(0.35)">
+        <text x="10" y="30" font-family="'Plus Jakarta Sans', sans-serif" font-weight="900" font-style="italic" font-size="32" fill="#0c2340">
+          AW<tspan fill="#ff7300">X</tspan>
+        </text>
+        <path d="M 0 38 L 90 38" stroke="#ff7300" stroke-width="3"/>
+      </g>
+
+      <!-- Headlight / Bumper -->
+      <path d="M 20 145 L 35 145 L 35 168 L 15 168 Z" fill="#ffd166" filter="url(#truckShadow)"/>
+      <rect x="8" y="152" width="30" height="18" rx="4" fill="#e2e8f0" stroke="#94a3b8" />
+      <!-- Bumper lower -->
+      <rect x="5" y="168" width="135" height="16" rx="3" fill="#334155" />
+    </g>
+
+    <!-- Wheels and Undercarriage -->
+    <!-- Chassis under truck -->
+    <rect x="35" y="248" width="510" height="14" fill="#1e293b" />
+    <rect x="230" y="242" width="60" height="20" rx="3" fill="#475569" /> <!-- Fuel Tank -->
+    <rect x="340" y="242" width="70" height="20" rx="3" fill="#334155" /> <!-- Tool Box -->
+
+    <!-- Front Wheel -->
+    <g transform="translate(95, 252)">
+      <circle cx="0" cy="0" r="38" fill="#0f172a" />
+      <circle cx="0" cy="0" r="24" fill="#64748b" />
+      <circle cx="0" cy="0" r="16" fill="#94a3b8" />
+      <circle cx="0" cy="0" r="7" fill="#0f172a" />
+      <!-- Lug nuts -->
+      <circle cx="0" cy="-11" r="2.5" fill="#ffffff" />
+      <circle cx="9.5" cy="-5.5" r="2.5" fill="#ffffff" />
+      <circle cx="9.5" cy="5.5" r="2.5" fill="#ffffff" />
+      <circle cx="0" cy="11" r="2.5" fill="#ffffff" />
+      <circle cx="-9.5" cy="5.5" r="2.5" fill="#ffffff" />
+      <circle cx="-9.5" cy="-5.5" r="2.5" fill="#ffffff" />
+    </g>
+
+    <!-- Rear Dual Wheel 1 -->
+    <g transform="translate(435, 252)">
+      <circle cx="0" cy="0" r="38" fill="#0f172a" />
+      <circle cx="0" cy="0" r="24" fill="#64748b" />
+      <circle cx="0" cy="0" r="16" fill="#94a3b8" />
+      <circle cx="0" cy="0" r="7" fill="#0f172a" />
+      <!-- Lug nuts -->
+      <circle cx="0" cy="-11" r="2.5" fill="#ffffff" />
+      <circle cx="9.5" cy="-5.5" r="2.5" fill="#ffffff" />
+      <circle cx="9.5" cy="5.5" r="2.5" fill="#ffffff" />
+      <circle cx="0" cy="11" r="2.5" fill="#ffffff" />
+      <circle cx="-9.5" cy="5.5" r="2.5" fill="#ffffff" />
+      <circle cx="-9.5" cy="-5.5" r="2.5" fill="#ffffff" />
+    </g>
+
+    <!-- Rear Dual Wheel 2 (Tandem) -->
+    <g transform="translate(500, 252)">
+      <circle cx="0" cy="0" r="38" fill="#0f172a" />
+      <circle cx="0" cy="0" r="24" fill="#64748b" />
+      <circle cx="0" cy="0" r="16" fill="#94a3b8" />
+      <circle cx="0" cy="0" r="7" fill="#0f172a" />
+      <!-- Lug nuts -->
+      <circle cx="0" cy="-11" r="2.5" fill="#ffffff" />
+      <circle cx="9.5" cy="-5.5" r="2.5" fill="#ffffff" />
+      <circle cx="9.5" cy="5.5" r="2.5" fill="#ffffff" />
+      <circle cx="0" cy="11" r="2.5" fill="#ffffff" />
+      <circle cx="-9.5" cy="5.5" r="2.5" fill="#ffffff" />
+      <circle cx="-9.5" cy="-5.5" r="2.5" fill="#ffffff" />
+    </g>
+  </g>
+</svg>
